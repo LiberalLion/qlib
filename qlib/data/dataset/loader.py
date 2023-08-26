@@ -100,7 +100,7 @@ class DLWParser(DataLoader):
         elif isinstance(fields_info[0], (list, tuple)):
             exprs, names = fields_info
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
         return exprs, names
 
     @abc.abstractmethod
@@ -134,17 +134,17 @@ class DLWParser(DataLoader):
 
     def load(self, instruments=None, start_time=None, end_time=None) -> pd.DataFrame:
         if self.is_group:
-            df = pd.concat(
+            return pd.concat(
                 {
-                    grp: self.load_group_df(instruments, exprs, names, start_time, end_time, grp)
+                    grp: self.load_group_df(
+                        instruments, exprs, names, start_time, end_time, grp
+                    )
                     for grp, (exprs, names) in self.fields.items()
                 },
                 axis=1,
             )
-        else:
-            exprs, names = self.fields
-            df = self.load_group_df(instruments, exprs, names, start_time, end_time)
-        return df
+        exprs, names = self.fields
+        return self.load_group_df(instruments, exprs, names, start_time, end_time)
 
 
 class QlibDataLoader(DLWParser):
@@ -318,21 +318,28 @@ class DataLoaderDH(DataLoader):
             self.handlers = init_instance_by_config(handler_config, accept_types=DataHandler)
 
         self.is_group = is_group
-        self.fetch_kwargs = {"col_set": DataHandler.CS_RAW}
-        self.fetch_kwargs.update(fetch_kwargs)
+        self.fetch_kwargs = {"col_set": DataHandler.CS_RAW} | fetch_kwargs
 
     def load(self, instruments=None, start_time=None, end_time=None) -> pd.DataFrame:
         if instruments is not None:
             get_module_logger(self.__class__.__name__).warning(f"instruments[{instruments}] is ignored")
 
-        if self.is_group:
-            df = pd.concat(
+        return (
+            pd.concat(
                 {
-                    grp: dh.fetch(selector=slice(start_time, end_time), level="datetime", **self.fetch_kwargs)
+                    grp: dh.fetch(
+                        selector=slice(start_time, end_time),
+                        level="datetime",
+                        **self.fetch_kwargs
+                    )
                     for grp, dh in self.handlers.items()
                 },
                 axis=1,
             )
-        else:
-            df = self.handlers.fetch(selector=slice(start_time, end_time), level="datetime", **self.fetch_kwargs)
-        return df
+            if self.is_group
+            else self.handlers.fetch(
+                selector=slice(start_time, end_time),
+                level="datetime",
+                **self.fetch_kwargs
+            )
+        )

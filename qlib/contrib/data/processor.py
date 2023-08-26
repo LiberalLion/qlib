@@ -62,10 +62,14 @@ class ConfigSectionProcessor(Processor):
 
         # Features
         cols = df_focus.columns[df_focus.columns.str.contains("^KLEN|^KLOW|^KUP")]
-        df_focus[cols] = df_focus[cols].apply(lambda x: x ** 0.25).groupby(level="datetime").apply(_feature_norm)
+        df_focus[cols] = (
+            (df_focus[cols] ** 0.25).groupby(level="datetime").apply(_feature_norm)
+        )
 
         cols = df_focus.columns[df_focus.columns.str.contains("^KLOW2|^KUP2")]
-        df_focus[cols] = df_focus[cols].apply(lambda x: x ** 0.5).groupby(level="datetime").apply(_feature_norm)
+        df_focus[cols] = (
+            (df_focus[cols] ** 0.5).groupby(level="datetime").apply(_feature_norm)
+        )
 
         _cols = [
             "KMID",
@@ -100,10 +104,18 @@ class ConfigSectionProcessor(Processor):
         df_focus[cols] = df_focus[cols].fillna(0).groupby(level="datetime").apply(_feature_norm)
 
         cols = df_focus.columns[df_focus.columns.str.contains("^MAX|^HIGH0")]
-        df_focus[cols] = df_focus[cols].apply(lambda x: (x - 1) ** 0.5).groupby(level="datetime").apply(_feature_norm)
+        df_focus[cols] = (
+            ((df_focus[cols] - 1) ** 0.5)
+            .groupby(level="datetime")
+            .apply(_feature_norm)
+        )
 
         cols = df_focus.columns[df_focus.columns.str.contains("^MIN|^LOW0")]
-        df_focus[cols] = df_focus[cols].apply(lambda x: (1 - x) ** 0.5).groupby(level="datetime").apply(_feature_norm)
+        df_focus[cols] = (
+            ((1 - df_focus[cols]) ** 0.5)
+            .groupby(level="datetime")
+            .apply(_feature_norm)
+        )
 
         cols = df_focus.columns[df_focus.columns.str.contains("^CORR|^CORD")]
         df_focus[cols] = df_focus[cols].apply(np.exp).groupby(level="datetime").apply(_feature_norm)

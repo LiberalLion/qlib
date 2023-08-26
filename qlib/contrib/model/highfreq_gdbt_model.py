@@ -18,8 +18,7 @@ class HFLGBModel(ModelFT, LightGBMFInt):
     def __init__(self, loss="mse", **kwargs):
         if loss not in {"mse", "binary"}:
             raise NotImplementedError
-        self.params = {"objective": loss, "verbosity": -1}
-        self.params.update(kwargs)
+        self.params = {"objective": loss, "verbosity": -1} | kwargs
         self.model = None
 
     def _cal_signal_metrics(self, y_test, l_cut, r_cut):
@@ -58,7 +57,7 @@ class HFLGBModel(ModelFT, LightGBMFInt):
         """
         Test the sigal in high frequency test set
         """
-        if self.model == None:
+        if self.model is None:
             raise ValueError("Model hasn't been trained yet")
         df_test = dataset.prepare("test", col_set=["feature", "label"], data_key=DataHandlerLP.DK_I)
         df_test.dropna(inplace=True)
@@ -74,9 +73,9 @@ class HFLGBModel(ModelFT, LightGBMFInt):
         print("High frequency signal test")
         print("===============================")
         print("Test set precision: ")
-        print("Positive precision: {}, Negative precision: {}".format(up_p, down_p))
+        print(f"Positive precision: {up_p}, Negative precision: {down_p}")
         print("Test Alpha Average in test set: ")
-        print("Positive average alpha: {}, Negative average alpha: {}".format(up_a, down_a))
+        print(f"Positive average alpha: {up_a}, Negative average alpha: {down_a}")
 
     def _prepare_data(self, dataset: DatasetH):
         df_train, df_valid = dataset.prepare(
@@ -85,19 +84,18 @@ class HFLGBModel(ModelFT, LightGBMFInt):
 
         x_train, y_train = df_train["feature"], df_train["label"]
         x_valid, y_valid = df_train["feature"], df_valid["label"]
-        if y_train.values.ndim == 2 and y_train.values.shape[1] == 1:
-            l_name = df_train["label"].columns[0]
-            # Convert label into alpha
-            df_train["label"][l_name] = df_train["label"][l_name] - df_train["label"][l_name].mean(level=0)
-            df_valid["label"][l_name] = df_valid["label"][l_name] - df_valid["label"][l_name].mean(level=0)
-            mapping_fn = lambda x: 0 if x < 0 else 1
-            df_train["label_c"] = df_train["label"][l_name].apply(mapping_fn)
-            df_valid["label_c"] = df_valid["label"][l_name].apply(mapping_fn)
-            x_train, y_train = df_train["feature"], df_train["label_c"].values
-            x_valid, y_valid = df_valid["feature"], df_valid["label_c"].values
-        else:
+        if y_train.values.ndim != 2 or y_train.values.shape[1] != 1:
             raise ValueError("LightGBM doesn't support multi-label training")
 
+        l_name = df_train["label"].columns[0]
+        # Convert label into alpha
+        df_train["label"][l_name] = df_train["label"][l_name] - df_train["label"][l_name].mean(level=0)
+        df_valid["label"][l_name] = df_valid["label"][l_name] - df_valid["label"][l_name].mean(level=0)
+        mapping_fn = lambda x: 0 if x < 0 else 1
+        df_train["label_c"] = df_train["label"][l_name].apply(mapping_fn)
+        df_valid["label_c"] = df_valid["label"][l_name].apply(mapping_fn)
+        x_train, y_train = df_train["feature"], df_train["label_c"].values
+        x_valid, y_valid = df_valid["feature"], df_valid["label_c"].values
         dtrain = lgb.Dataset(x_train, label=y_train)
         dvalid = lgb.Dataset(x_valid, label=y_valid)
         return dtrain, dvalid

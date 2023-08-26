@@ -31,7 +31,7 @@ def objective(trial):
         },
     }
 
-    evals_result = dict()
+    evals_result = {}
     model = init_instance_by_config(task["model"])
     model.fit(dataset, evals_result=evals_result)
     return min(evals_result["valid"])

@@ -54,7 +54,7 @@ class Pipeline:
         """
         # 1. Add experiment config in tuner_config
         tuner_config["experiment"] = {
-            "name": "estimator_experiment_{}".format(tuner_index),
+            "name": f"estimator_experiment_{tuner_index}",
             "id": tuner_index,
             "dir": self.pipeline_ex_config.estimator_ex_dir,
             "observer_type": "file_storage",
@@ -81,6 +81,6 @@ class Pipeline:
             json.dump(self.global_best_params, fp)
         TimeInspector.log_cost_time("Finished save global best tuner parameters.")
 
-        self.logger.info("Best Tuner id: {}.".format(self.best_tuner_index))
-        self.logger.info("Global best parameters: {}.".format(self.global_best_params))
-        self.logger.info("You can check the best parameters at {}.".format(save_path))
+        self.logger.info(f"Best Tuner id: {self.best_tuner_index}.")
+        self.logger.info(f"Global best parameters: {self.global_best_params}.")
+        self.logger.info(f"You can check the best parameters at {save_path}.")

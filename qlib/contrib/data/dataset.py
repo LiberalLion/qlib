@@ -64,14 +64,13 @@ def _get_date_parse_fn(target):
         get_date_parse_fn(20120101)('2017-01-01') => 20170101
     """
     if isinstance(target, pd.Timestamp):
-        _fn = lambda x: pd.Timestamp(x)  # Timestamp('2020-01-01')
+        return lambda x: pd.Timestamp(x)
     elif isinstance(target, int):
-        _fn = lambda x: int(str(x).replace("-", "")[:8])  # 20200201
+        return lambda x: int(str(x).replace("-", "")[:8])
     elif isinstance(target, str) and len(target) == 8:
-        _fn = lambda x: str(x).replace("-", "")[:8]  # '20200201'
+        return lambda x: str(x).replace("-", "")[:8]
     else:
-        _fn = lambda x: x  # '2021-01-01'
-    return _fn
+        return lambda x: x
 
 
 def _maybe_padding(x, seq_len, zeros=None):

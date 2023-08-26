@@ -76,9 +76,7 @@ class FundCollector(BaseCollector):
     def init_datetime(self):
         if self.interval == self.INTERVAL_1min:
             self.start_datetime = max(self.start_datetime, self.DEFAULT_START_DATETIME_1MIN)
-        elif self.interval == self.INTERVAL_1d:
-            pass
-        else:
+        elif self.interval != self.INTERVAL_1d:
             raise ValueError(f"interval error: {self.interval}")
 
         self.start_datetime = self.convert_datetime(self.start_datetime, self._timezone)
@@ -116,7 +114,7 @@ class FundCollector(BaseCollector):
 
             # Some funds don't show the net value, example: http://fundf10.eastmoney.com/jjjz_010288.html
             SYType = data["Data"]["SYType"]
-            if (SYType == "每万份收益") or (SYType == "每百份收益") or (SYType == "每百万份收益"):
+            if SYType in ["每万份收益", "每百份收益", "每百万份收益"]:
                 raise Exception("The fund contains 每*份收益")
 
             # TODO: should we sort the value by datetime?

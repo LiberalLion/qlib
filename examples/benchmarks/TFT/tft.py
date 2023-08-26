@@ -152,8 +152,7 @@ class TFTModel(ModelFT):
 
     def __init__(self, **kwargs):
         self.model = None
-        self.params = {"DATASET": "Alpha158", "label_shift": 5}
-        self.params.update(kwargs)
+        self.params = {"DATASET": "Alpha158", "label_shift": 5} | kwargs
 
     def _prepare_data(self, dataset: DatasetH):
         df_train, df_valid = dataset.prepare(
@@ -276,9 +275,7 @@ class TFTModel(ModelFT):
 
         predict50 = format_score(p50_forecast, "pred", 1)
         predict90 = format_score(p90_forecast, "pred", 1)
-        predict = (predict50 + predict90) / 2  # self.label_shift
-        # ===========================Predicting Process===========================
-        return predict
+        return (predict50 + predict90) / 2
 
     def finetune(self, dataset: DatasetH):
         """

@@ -147,29 +147,35 @@ class TRAModel(Model):
         print(self.tra)
 
         if self.init_state:
-            self.logger.warning(f"load state dict from `init_state`")
+            self.logger.warning("load state dict from `init_state`")
             state_dict = torch.load(self.init_state, map_location="cpu")
             self.model.load_state_dict(state_dict["model"])
             res = load_state_dict_unsafe(self.tra, state_dict["tra"])
             self.logger.warning(str(res))
 
         if self.reset_router:
-            self.logger.warning(f"reset TRA.router parameters")
+            self.logger.warning("reset TRA.router parameters")
             self.tra.fc.reset_parameters()
             self.tra.router.reset_parameters()
 
         if self.freeze_model:
-            self.logger.warning(f"freeze model parameters")
+            self.logger.warning("freeze model parameters")
             for param in self.model.parameters():
                 param.requires_grad_(False)
 
         if self.freeze_predictors:
-            self.logger.warning(f"freeze TRA.predictors parameters")
+            self.logger.warning("freeze TRA.predictors parameters")
             for param in self.tra.predictors.parameters():
                 param.requires_grad_(False)
 
-        self.logger.info("# model params: %d" % sum([p.numel() for p in self.model.parameters() if p.requires_grad]))
-        self.logger.info("# tra params: %d" % sum([p.numel() for p in self.tra.parameters() if p.requires_grad]))
+        self.logger.info(
+            "# model params: %d"
+            % sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        )
+        self.logger.info(
+            "# tra params: %d"
+            % sum(p.numel() for p in self.tra.parameters() if p.requires_grad)
+        )
 
         self.optimizer = optim.Adam(list(self.model.parameters()) + list(self.tra.parameters()), lr=self.lr)
 
@@ -386,16 +392,16 @@ class TRAModel(Model):
                 train_set.clear_memory()  # NOTE: clear the shared memory
                 train_metrics = self.test_epoch(epoch, train_set, is_pretrain=is_pretrain, prefix="train")[0]
                 evals_result["train"].append(train_metrics)
-                self.logger.info("train metrics: %s" % train_metrics)
+                self.logger.info(f"train metrics: {train_metrics}")
 
             valid_metrics = self.test_epoch(epoch, valid_set, is_pretrain=is_pretrain, prefix="valid")[0]
             evals_result["valid"].append(valid_metrics)
-            self.logger.info("valid metrics: %s" % valid_metrics)
+            self.logger.info(f"valid metrics: {valid_metrics}")
 
             if self.eval_test:
                 test_metrics = self.test_epoch(epoch, test_set, is_pretrain=is_pretrain, prefix="test")[0]
                 evals_result["test"].append(test_metrics)
-                self.logger.info("test metrics: %s" % test_metrics)
+                self.logger.info(f"test metrics: {test_metrics}")
 
             if valid_metrics["IC"] > best_score:
                 best_score = valid_metrics["IC"]
@@ -410,7 +416,7 @@ class TRAModel(Model):
             else:
                 stop_rounds += 1
                 if stop_rounds >= self.early_stop:
-                    self.logger.info("early stop @ %s" % epoch)
+                    self.logger.info(f"early stop @ {epoch}")
                     break
 
         self.logger.info("best score: %.6lf @ %d" % (best_score, best_epoch))
@@ -447,13 +453,13 @@ class TRAModel(Model):
 
         self.logger.info("inference")
         train_metrics, train_preds, train_probs, train_P = self.test_epoch(-1, train_set, return_pred=True)
-        self.logger.info("train metrics: %s" % train_metrics)
+        self.logger.info(f"train metrics: {train_metrics}")
 
         valid_metrics, valid_preds, valid_probs, valid_P = self.test_epoch(-1, valid_set, return_pred=True)
-        self.logger.info("valid metrics: %s" % valid_metrics)
+        self.logger.info(f"valid metrics: {valid_metrics}")
 
         test_metrics, test_preds, test_probs, test_P = self.test_epoch(-1, test_set, return_pred=True)
-        self.logger.info("test metrics: %s" % test_metrics)
+        self.logger.info(f"test metrics: {test_metrics}")
 
         if self.logdir:
             self.logger.info("save model & pred to local directory")
@@ -513,7 +519,7 @@ class TRAModel(Model):
         test_set = dataset.prepare(segment)
 
         metrics, preds, _, _ = self.test_epoch(-1, test_set, return_pred=True)
-        self.logger.info("test metrics: %s" % metrics)
+        self.logger.info(f"test metrics: {metrics}")
 
         return preds
 
@@ -773,7 +779,7 @@ def sinkhorn(Q, n_iters=3, epsilon=0.1):
     with torch.no_grad():
         Q = torch.exp(Q / epsilon)
         Q = shoot_infs(Q)
-        for i in range(n_iters):
+        for _ in range(n_iters):
             Q /= Q.sum(dim=0, keepdim=True)
             Q /= Q.sum(dim=1, keepdim=True)
     return Q

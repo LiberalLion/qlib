@@ -47,9 +47,9 @@ class Tuner:
             algo=tpe.suggest,
             max_evals=self.max_evals,
         )
-        self.logger.info("Local best params: {} ".format(self.best_params))
+        self.logger.info(f"Local best params: {self.best_params} ")
         TimeInspector.log_cost_time(
-            "Finished searching best parameters in Tuner {}.".format(self.tuner_config["experiment"]["id"])
+            f'Finished searching best parameters in Tuner {self.tuner_config["experiment"]["id"]}.'
         )
 
         self.save_local_best_params()
@@ -91,22 +91,18 @@ class QLibTuner(Tuner):
 
         # 1. Setup an config for a spcific estimator process
         estimator_path = self.setup_estimator_config(params)
-        self.logger.info("Searching params: {} ".format(params))
+        self.logger.info(f"Searching params: {params} ")
 
-        # 2. Use subprocess to do the estimator program, this process will wait until subprocess finish
-        sub_fails = subprocess.call("estimator -c {}".format(estimator_path), shell=True)
-        if sub_fails:
+        if sub_fails := subprocess.call(
+            f"estimator -c {estimator_path}", shell=True
+        ):
             # If this subprocess failed, ignore this evaluation step
             self.logger.info("Estimator experiment failed when using this searching parameters")
             return {"loss": np.nan, "status": STATUS_FAIL}
 
         # 3. Fetch the result of subprocess, and check whether the result is Nan
         res = self.fetch_result()
-        if np.isnan(res):
-            status = STATUS_FAIL
-        else:
-            status = STATUS_OK
-
+        status = STATUS_FAIL if np.isnan(res) else STATUS_OK
         # 4. Save the best score and params
         if self.best_res is None or self.best_res > res:
             self.best_res = res
@@ -199,11 +195,9 @@ class QLibTuner(Tuner):
             data_label_space_name = None
 
         # 4. Combine the searching space
-        space = dict()
-        space.update({"model_space": model_space})
-        space.update({"strategy_space": strategy_space})
+        space = {"model_space": model_space, "strategy_space": strategy_space}
         if data_label_space_name is not None:
-            space.update({"data_label_space": data_label_space})
+            space["data_label_space"] = data_label_space
 
         return space
 
@@ -214,5 +208,5 @@ class QLibTuner(Tuner):
         with open(local_best_params_path, "w") as fp:
             json.dump(self.best_params, fp)
         TimeInspector.log_cost_time(
-            "Finished saving local best tuner parameters to: {} .".format(local_best_params_path)
+            f"Finished saving local best tuner parameters to: {local_best_params_path} ."
         )

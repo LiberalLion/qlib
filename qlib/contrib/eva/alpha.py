@@ -81,10 +81,7 @@ def calc_ic(pred: pd.Series, label: pd.Series, date_col="datetime", dropna=False
     df = pd.DataFrame({"pred": pred, "label": label})
     ic = df.groupby(date_col).apply(lambda df: df["pred"].corr(df["label"]))
     ric = df.groupby(date_col).apply(lambda df: df["pred"].corr(df["label"], method="spearman"))
-    if dropna:
-        return ic.dropna(), ric.dropna()
-    else:
-        return ic, ric
+    return (ic.dropna(), ric.dropna()) if dropna else (ic, ric)
 
 
 def calc_long_short_return(

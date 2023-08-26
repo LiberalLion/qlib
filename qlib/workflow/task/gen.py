@@ -237,8 +237,6 @@ class RollingGen(TaskGen):
         ----------
         List[dict]: a list of tasks
         """
-        res = []
-
         t = copy.deepcopy(task)
 
         # calculate segments
@@ -254,8 +252,7 @@ class RollingGen(TaskGen):
         # update segments of this task
         self._update_task_segs(t, segments)
 
-        res.append(t)
-
+        res = [t]
         # Update the following rolling
         res.extend(self.gen_following_tasks(t, test_end))
         return res

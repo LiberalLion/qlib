@@ -274,7 +274,7 @@ class QlibConfig(Config):
                     return Path(f"{self.mount_path[freq]}:\\")
                 return Path(self.mount_path[freq])
             else:
-                raise NotImplementedError(f"This type of uri is not supported")
+                raise NotImplementedError("This type of uri is not supported")
 
     def set_mode(self, mode):
         # raise KeyError
@@ -324,12 +324,7 @@ class QlibConfig(Config):
 
         self.reset()
 
-        _logging_config = self.logging_config
-        if "logging_config" in kwargs:
-            _logging_config = kwargs["logging_config"]
-
-        # set global config
-        if _logging_config:
+        if _logging_config := kwargs.get("logging_config", self.logging_config):
             set_log_with_config(_logging_config)
 
         # FIXME: this logger ignored the level in config
@@ -341,12 +336,15 @@ class QlibConfig(Config):
 
         for k, v in kwargs.items():
             if k not in self:
-                logger.warning("Unrecognized config %s" % k)
+                logger.warning(f"Unrecognized config {k}")
             self[k] = v
 
         self.resolve_path()
 
-        if not (self["expression_cache"] is None and self["dataset_cache"] is None):
+        if (
+            self["expression_cache"] is not None
+            or self["dataset_cache"] is not None
+        ):
             # check redis
             if not can_use_cache():
                 logger.warning(

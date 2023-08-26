@@ -43,7 +43,7 @@ class OnlineStrategy:
 
         You can find the last online models by OnlineTool.online_models.
         """
-        raise NotImplementedError(f"Please implement the `prepare_tasks` method.")
+        raise NotImplementedError("Please implement the `prepare_tasks` method.")
 
     def prepare_online_models(self, trained_models, cur_time=None) -> List[object]:
         """
@@ -75,7 +75,7 @@ class OnlineStrategy:
         """
         Generate a series of tasks firstly and return them.
         """
-        raise NotImplementedError(f"Please implement the `first_tasks` method.")
+        raise NotImplementedError("Please implement the `first_tasks` method.")
 
     def get_collector(self) -> Collector:
         """
@@ -88,7 +88,7 @@ class OnlineStrategy:
         Returns:
             Collector
         """
-        raise NotImplementedError(f"Please implement the `get_collector` method.")
+        raise NotImplementedError("Please implement the `get_collector` method.")
 
 
 class RollingStrategy(OnlineStrategy):
@@ -179,7 +179,7 @@ class RollingStrategy(OnlineStrategy):
         # TODO: filter recorders by latest test segments is not a necessary
         latest_records, max_test = self._list_latest(self.tool.online_models())
         if max_test is None:
-            self.logger.warn(f"No latest online recorders, no new tasks.")
+            self.logger.warn("No latest online recorders, no new tasks.")
             return []
         calendar_latest = transform_end_date(cur_time)
         self.logger.info(
@@ -201,11 +201,13 @@ class RollingStrategy(OnlineStrategy):
         Returns:
             List[Recorder], pd.Timestamp: the latest recorders and their test end time
         """
-        if len(rec_list) == 0:
+        if not rec_list:
             return rec_list, None
         max_test = max(rec.load_object("task")["dataset"]["kwargs"]["segments"]["test"] for rec in rec_list)
-        latest_rec = []
-        for rec in rec_list:
-            if rec.load_object("task")["dataset"]["kwargs"]["segments"]["test"] == max_test:
-                latest_rec.append(rec)
+        latest_rec = [
+            rec
+            for rec in rec_list
+            if rec.load_object("task")["dataset"]["kwargs"]["segments"]["test"]
+            == max_test
+        ]
         return latest_rec, max_test

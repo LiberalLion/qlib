@@ -149,7 +149,7 @@ class Expression(abc.ABC):
         if args in H["f"]:
             return H["f"][args]
         if start_index is None or end_index is None or start_index > end_index:
-            raise ValueError("Invalid index range: {} {}".format(start_index, end_index))
+            raise ValueError(f"Invalid index range: {start_index} {end_index}")
         series = self._load_internal(instrument, start_index, end_index, freq)
         series.name = str(self)
         H["f"][args] = series
@@ -195,10 +195,7 @@ class Feature(Expression):
     """
 
     def __init__(self, name=None):
-        if name:
-            self._name = name
-        else:
-            self._name = type(self).__name__
+        self._name = name if name else type(self).__name__
 
     def __str__(self):
         return "$" + self._name

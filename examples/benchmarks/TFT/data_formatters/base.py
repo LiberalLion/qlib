@@ -214,7 +214,7 @@ class GenericDataFormatter(abc.ABC):
 
         for k in required_keys:
             if k not in fixed_params:
-                raise ValueError("Field {}".format(k) + " missing from fixed parameter definitions!")
+                raise ValueError(f"Field {k} missing from fixed parameter definitions!")
 
         fixed_params["column_definition"] = self.get_column_definition()
 

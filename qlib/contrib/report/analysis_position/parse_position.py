@@ -108,8 +108,7 @@ def _add_bench_to_position(position_df: pd.DataFrame = None, bench: pd.Series = 
     _temp_df = position_df.reset_index(level="instrument")
     # FIXME: After the stock is bought and sold, the rise and fall of the next trading day are calculated.
     _temp_df["bench"] = bench.shift(-1)
-    res_df = _temp_df.set_index(["instrument", _temp_df.index])
-    return res_df
+    return _temp_df.set_index(["instrument", _temp_df.index])
 
 
 def _calculate_label_rank(df: pd.DataFrame) -> pd.DataFrame:

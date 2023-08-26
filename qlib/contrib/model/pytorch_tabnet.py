@@ -70,18 +70,16 @@ class TabnetModel(Model):
         self.n_epochs = n_epochs
         self.logger = get_module_logger("TabNet")
         self.pretrain_n_epochs = pretrain_n_epochs
-        self.device = "cuda:%s" % (GPU) if torch.cuda.is_available() and GPU >= 0 else "cpu"
+        self.device = (
+            f"cuda:{GPU}" if torch.cuda.is_available() and GPU >= 0 else "cpu"
+        )
         self.loss = loss
         self.metric = metric
         self.early_stop = early_stop
         self.pretrain = pretrain
         self.pretrain_file = get_or_create_path(pretrain_file)
         self.logger.info(
-            "TabNet:"
-            "\nbatch_size : {}"
-            "\nvirtual bs : {}"
-            "\ndevice : {}"
-            "\npretrain: {}".format(self.batch_size, vbs, self.device, self.pretrain)
+            f"TabNet:\nbatch_size : {self.batch_size}\nvirtual bs : {vbs}\ndevice : {self.device}\npretrain: {self.pretrain}"
         )
         self.fitted = False
         np.random.seed(self.seed)
@@ -104,7 +102,7 @@ class TabnetModel(Model):
             )
             self.train_optimizer = optim.SGD(self.tabnet_model.parameters(), lr=self.lr)
         else:
-            raise NotImplementedError("optimizer {} is not supported!".format(optimizer))
+            raise NotImplementedError(f"optimizer {optimizer} is not supported!")
 
     @property
     def use_gpu(self):
@@ -131,7 +129,7 @@ class TabnetModel(Model):
         best_loss = np.inf
 
         for epoch_idx in range(self.pretrain_n_epochs):
-            self.logger.info("epoch: %s" % (epoch_idx))
+            self.logger.info(f"epoch: {epoch_idx}")
             self.logger.info("pre-training...")
             self.pretrain_epoch(x_train)
             self.logger.info("evaluating...")
@@ -185,7 +183,7 @@ class TabnetModel(Model):
         self.fitted = True
 
         for epoch_idx in range(self.n_epochs):
-            self.logger.info("epoch: %s" % (epoch_idx))
+            self.logger.info(f"epoch: {epoch_idx}")
             self.logger.info("training...")
             self.train_epoch(x_train, y_train)
             self.logger.info("evaluating...")
@@ -372,13 +370,13 @@ class TabnetModel(Model):
         mask = ~torch.isnan(label)
         if self.loss == "mse":
             return self.mse(pred[mask], label[mask])
-        raise ValueError("unknown loss `%s`" % self.loss)
+        raise ValueError(f"unknown loss `{self.loss}`")
 
     def metric_fn(self, pred, label):
         mask = torch.isfinite(label)
-        if self.metric == "" or self.metric == "loss":
+        if self.metric in ["", "loss"]:
             return -self.loss_fn(pred[mask], label[mask])
-        raise ValueError("unknown metric `%s`" % self.metric)
+        raise ValueError(f"unknown metric `{self.metric}`")
 
     def mse(self, pred, label):
         loss = (pred - label) ** 2
@@ -420,13 +418,13 @@ class TabNet_Decoder(nn.Module):
         if n_shared > 0:
             self.shared = nn.ModuleList()
             self.shared.append(nn.Linear(inp_dim, 2 * out_dim))
-            for x in range(n_shared - 1):
+            for _ in range(n_shared - 1):
                 self.shared.append(nn.Linear(out_dim, 2 * out_dim))  # preset the linear function we will use
         else:
             self.shared = None
         self.n_steps = n_steps
         self.steps = nn.ModuleList()
-        for x in range(n_steps):
+        for _ in range(n_steps):
             self.steps.append(DecoderStep(inp_dim, out_dim, self.shared, n_ind, vbs))
 
     def forward(self, x):
@@ -456,14 +454,14 @@ class TabNet(nn.Module):
         if n_shared > 0:
             self.shared = nn.ModuleList()
             self.shared.append(nn.Linear(inp_dim, 2 * (n_d + n_a)))
-            for x in range(n_shared - 1):
+            for _ in range(n_shared - 1):
                 self.shared.append(nn.Linear(n_d + n_a, 2 * (n_d + n_a)))  # preset the linear function we will use
         else:
             self.shared = None
 
         self.first_step = FeatureTransformer(inp_dim, n_d + n_a, self.shared, n_ind, vbs)
         self.steps = nn.ModuleList()
-        for x in range(n_steps - 1):
+        for _ in range(n_steps - 1):
             self.steps.append(DecisionStep(inp_dim, n_d, n_a, self.shared, n_ind, relax, vbs))
         self.fc = nn.Linear(n_d, out_dim)
         self.bn = nn.BatchNorm1d(inp_dim, momentum=0.01)
@@ -498,12 +496,11 @@ class GBN(nn.Module):
         self.vbs = vbs
 
     def forward(self, x):
-        if x.size(0) <= self.vbs:  # can not be chunked
+        if x.size(0) <= self.vbs:
             return self.bn(x)
-        else:
-            chunk = torch.chunk(x, x.size(0) // self.vbs, 0)
-            res = [self.bn(y) for y in chunk]
-            return torch.cat(res, 0)
+        chunk = torch.chunk(x, x.size(0) // self.vbs, 0)
+        res = [self.bn(y) for y in chunk]
+        return torch.cat(res, 0)
 
 
 class GLU(nn.Module):
@@ -516,10 +513,7 @@ class GLU(nn.Module):
 
     def __init__(self, inp_dim, out_dim, fc=None, vbs=1024):
         super().__init__()
-        if fc:
-            self.fc = fc
-        else:
-            self.fc = nn.Linear(inp_dim, out_dim * 2)
+        self.fc = fc if fc else nn.Linear(inp_dim, out_dim * 2)
         self.bn = GBN(out_dim * 2, vbs=vbs)
         self.od = out_dim
 
@@ -565,7 +559,7 @@ class FeatureTransformer(nn.Module):
         self.independ = nn.ModuleList()
         if first:
             self.independ.append(GLU(inp_dim, out_dim, vbs=vbs))
-        for x in range(first, n_ind):
+        for _ in range(first, n_ind):
             self.independ.append(GLU(out_dim, out_dim, vbs=vbs))
         self.scale = float(np.sqrt(0.5))
 

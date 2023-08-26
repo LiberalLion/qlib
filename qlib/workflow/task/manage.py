@@ -204,8 +204,7 @@ class TaskManager:
                 "status": self.STATUS_WAITING,
             }
         )
-        insert_result = self.insert_task(task)
-        return insert_result
+        return self.insert_task(task)
 
     def create_task(self, task_def_l, dry_run=False, print_nt=False) -> List[str]:
         """
@@ -250,10 +249,7 @@ class TaskManager:
             for t in new_tasks:
                 print(t)
 
-        if dry_run:
-            return []
-
-        return _id_list
+        return [] if dry_run else _id_list
 
     def fetch_task(self, query={}, status=STATUS_WAITING) -> dict:
         """

@@ -124,7 +124,7 @@ class Trainer:
         Returns:
             list: a list of models
         """
-        raise NotImplementedError(f"Please implement the `train` method.")
+        raise NotImplementedError("Please implement the `train` method.")
 
     def end_train(self, models: list, *args, **kwargs) -> list:
         """
@@ -196,7 +196,7 @@ class TrainerR(Trainer):
         """
         if isinstance(tasks, dict):
             tasks = [tasks]
-        if len(tasks) == 0:
+        if not tasks:
             return []
         if train_func is None:
             train_func = self.train_func
@@ -337,7 +337,7 @@ class TrainerRM(Trainer):
         """
         if isinstance(tasks, dict):
             tasks = [tasks]
-        if len(tasks) == 0:
+        if not tasks:
             return []
         if train_func is None:
             train_func = self.train_func
@@ -455,7 +455,7 @@ class DelayTrainerRM(TrainerRM):
         """
         if isinstance(tasks, dict):
             tasks = [tasks]
-        if len(tasks) == 0:
+        if not tasks:
             return []
         return super().train(
             tasks,
@@ -488,10 +488,7 @@ class DelayTrainerRM(TrainerRM):
         task_pool = self.task_pool
         if task_pool is None:
             task_pool = experiment_name
-        _id_list = []
-        for rec in recs:
-            _id_list.append(rec.list_tags()[self.TM_ID])
-
+        _id_list = [rec.list_tags()[self.TM_ID] for rec in recs]
         query = {"_id": {"$in": _id_list}}
         if not self.skip_run_task:
             run_task(

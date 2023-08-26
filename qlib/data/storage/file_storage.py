@@ -116,7 +116,7 @@ class FileInstrumentStorage(FileStorageMixin, InstrumentStorage):
         if not self.uri.exists():
             self._write_instrument()
 
-        _instruments = dict()
+        _instruments = {}
         df = pd.read_csv(
             self.uri,
             sep="\t",
@@ -220,25 +220,24 @@ class FileFeatureStorage(FileStorageMixin, FeatureStorage):
             index = 0 if index is None else index
             with self.uri.open("wb") as fp:
                 np.hstack([index, data_array]).astype("<f").tofile(fp)
+        elif index is None or index > self.end_index:
+            # append
+            index = 0 if index is None else index
+            with self.uri.open("ab+") as fp:
+                np.hstack([[np.nan] * (index - self.end_index - 1), data_array]).astype("<f").tofile(fp)
         else:
-            if index is None or index > self.end_index:
-                # append
-                index = 0 if index is None else index
-                with self.uri.open("ab+") as fp:
-                    np.hstack([[np.nan] * (index - self.end_index - 1), data_array]).astype("<f").tofile(fp)
-            else:
-                # rewrite
-                with self.uri.open("rb+") as fp:
-                    _old_data = np.fromfile(fp, dtype="<f")
-                    _old_index = _old_data[0]
-                    _old_df = pd.DataFrame(
-                        _old_data[1:], index=range(_old_index, _old_index + len(_old_data) - 1), columns=["old"]
-                    )
-                    fp.seek(0)
-                    _new_df = pd.DataFrame(data_array, index=range(index, index + len(data_array)), columns=["new"])
-                    _df = pd.concat([_old_df, _new_df], sort=False, axis=1)
-                    _df = _df.reindex(range(_df.index.min(), _df.index.max() + 1))
-                    _df["new"].fillna(_df["old"]).values.astype("<f").tofile(fp)
+            # rewrite
+            with self.uri.open("rb+") as fp:
+                _old_data = np.fromfile(fp, dtype="<f")
+                _old_index = _old_data[0]
+                _old_df = pd.DataFrame(
+                    _old_data[1:], index=range(_old_index, _old_index + len(_old_data) - 1), columns=["old"]
+                )
+                fp.seek(0)
+                _new_df = pd.DataFrame(data_array, index=range(index, index + len(data_array)), columns=["new"])
+                _df = pd.concat([_old_df, _new_df], sort=False, axis=1)
+                _df = _df.reindex(range(_df.index.min(), _df.index.max() + 1))
+                _df["new"].fillna(_df["old"]).values.astype("<f").tofile(fp)
 
     @property
     def start_index(self) -> Union[int, None]:
@@ -250,10 +249,7 @@ class FileFeatureStorage(FileStorageMixin, FeatureStorage):
 
     @property
     def end_index(self) -> Union[int, None]:
-        if not self.uri.exists():
-            return None
-        # The next  data appending index point will be  `end_index + 1`
-        return self.start_index + len(self) - 1
+        return None if not self.uri.exists() else self.start_index + len(self) - 1
 
     def __getitem__(self, i: Union[int, slice]) -> Union[Tuple[int, float], pd.Series]:
         if not self.uri.exists():

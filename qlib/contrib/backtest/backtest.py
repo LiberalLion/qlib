@@ -120,7 +120,7 @@ def backtest(pred, strategy, executor, trade_exchange, shift, verbose, account, 
 
     report_dict = {"report_df": report_df, "positions": positions}
     if return_order:
-        report_dict.update({"order_list": multi_order_list})
+        report_dict["order_list"] = multi_order_list
     return report_dict
 
 

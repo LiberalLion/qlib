@@ -25,7 +25,7 @@ def load_instance(file_path):
     """
     file_path = pathlib.Path(file_path)
     if not file_path.exists():
-        raise ValueError("Cannot find file {}".format(file_path))
+        raise ValueError(f"Cannot find file {file_path}")
     with file_path.open("rb") as fr:
         instance = pickle.load(fr)
     return instance
@@ -76,7 +76,9 @@ def prepare(um, today, user_id, exchange_config=None):
         latest_trading_date = um.user_record.loc[user_id][0]
 
     if str(today.date()) < latest_trading_date:
-        log.warning("user_id:{}, last trading date {} after today {}".format(user_id, latest_trading_date, today))
+        log.warning(
+            f"user_id:{user_id}, last trading date {latest_trading_date} after today {today}"
+        )
         return [pd.Timestamp(latest_trading_date)], None
 
     dates = D.calendar(

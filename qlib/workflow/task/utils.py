@@ -65,12 +65,11 @@ def list_recorders(experiment, rec_filter_func=None):
     if isinstance(experiment, str):
         experiment = R.get_exp(experiment_name=experiment)
     recs = experiment.list_recorders()
-    recs_flt = {}
-    for rid, rec in recs.items():
-        if rec_filter_func is None or rec_filter_func(rec):
-            recs_flt[rid] = rec
-
-    return recs_flt
+    return {
+        rid: rec
+        for rid, rec in recs.items()
+        if rec_filter_func is None or rec_filter_func(rec)
+    }
 
 
 class TimeAdjuster:
@@ -100,9 +99,7 @@ class TimeAdjuster:
         idx : int
             index of the calendar
         """
-        if idx >= len(self.cals):
-            return None
-        return self.cals[idx]
+        return None if idx >= len(self.cals) else self.cals[idx]
 
     def max(self) -> pd.Timestamp:
         """
@@ -129,7 +126,7 @@ class TimeAdjuster:
         elif tp_type == "end":
             idx = bisect.bisect_right(self.cals, time_point) - 1
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
         return idx
 
     def cal_interval(self, time_point_A, time_point_B) -> int:
@@ -184,10 +181,10 @@ class TimeAdjuster:
         """
         if isinstance(segment, dict):
             return {k: self.align_seg(seg) for k, seg in segment.items()}
-        elif isinstance(segment, tuple) or isinstance(segment, list):
+        elif isinstance(segment, (tuple, list)):
             return self.align_time(segment[0], tp_type="start"), self.align_time(segment[1], tp_type="end")
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
 
     def truncate(self, segment: tuple, test_start, days: int) -> tuple:
         """
@@ -215,7 +212,7 @@ class TimeAdjuster:
                 new_seg.append(self.get(tp_idx))
             return tuple(new_seg)
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
 
     SHIFT_SD = "sliding"
     SHIFT_EX = "expanding"
@@ -250,9 +247,9 @@ class TimeAdjuster:
             elif rtype == self.SHIFT_EX:
                 end_idx += step
             else:
-                raise NotImplementedError(f"This type of input is not supported")
+                raise NotImplementedError("This type of input is not supported")
             if start_idx > len(self.cals):
                 raise KeyError("The segment is out of valid calendar")
             return self.get(start_idx), self.get(end_idx)
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")

@@ -106,12 +106,11 @@ class OrderGenWInteract(OrderGenerator):
                 cash=current_tradable_value,
                 trade_date=trade_date,
             )
-        order_list = trade_exchange.generate_order_for_target_amount_position(
+        return trade_exchange.generate_order_for_target_amount_position(
             target_position=target_amount_dict,
             current_position=current_amount_dict,
             trade_date=trade_date,
         )
-        return order_list
 
 
 class OrderGenWOInteract(OrderGenerator):
@@ -163,9 +162,8 @@ class OrderGenWOInteract(OrderGenerator):
                 )
             else:
                 continue
-        order_list = trade_exchange.generate_order_for_target_amount_position(
+        return trade_exchange.generate_order_for_target_amount_position(
             target_position=amount_dict,
             current_position=current.get_stock_amount_dict(),
             trade_date=trade_date,
         )
-        return order_list

@@ -148,7 +148,7 @@ def get_exchange(
         logger.info("Create new exchange")
         # handle exception for deal_price
         if deal_price[0] != "$":
-            deal_price = "$" + deal_price
+            deal_price = f"${deal_price}"
         if extract_codes:
             codes = sorted(pred.index.get_level_values("instrument").unique())
         else:

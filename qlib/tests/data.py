@@ -52,7 +52,7 @@ class GetData:
 
         chunk_size = 1024
         logger.warning(
-            f"The data for the example is collected from Yahoo Finance. Please be aware that the quality of the data might not be perfect. (You can refer to the original data source: https://finance.yahoo.com/lookup.)"
+            "The data for the example is collected from Yahoo Finance. Please be aware that the quality of the data might not be perfect. (You can refer to the original data source: https://finance.yahoo.com/lookup.)"
         )
         logger.info(f"{file_name} downloading......")
         with tqdm(total=int(resp.headers.get("Content-Length", 0))) as p_bar:
@@ -68,10 +68,7 @@ class GetData:
     def check_dataset(self, file_name: str, dataset_version: str = None):
         url = self.merge_remote_url(file_name, dataset_version)
         resp = requests.get(url, stream=True)
-        status = True
-        if resp.status_code == 404:
-            status = False
-        return status
+        return resp.status_code != 404
 
     @staticmethod
     def _unzip(file_path: Path, target_dir: Path, delete_old: bool = True):

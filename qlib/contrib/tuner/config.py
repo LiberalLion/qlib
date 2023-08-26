@@ -17,14 +17,18 @@ class TunerConfigManager:
             config = yaml.safe_load(fp)
         self.config = copy.deepcopy(config)
 
-        self.pipeline_ex_config = PipelineExperimentConfig(config.get("experiment", dict()), self)
-        self.pipeline_config = config.get("tuner_pipeline", list())
-        self.optim_config = OptimizationConfig(config.get("optimization_criteria", dict()), self)
+        self.pipeline_ex_config = PipelineExperimentConfig(
+            config.get("experiment", {}), self
+        )
+        self.pipeline_config = config.get("tuner_pipeline", [])
+        self.optim_config = OptimizationConfig(
+            config.get("optimization_criteria", {}), self
+        )
 
-        self.time_config = config.get("time_period", dict())
-        self.data_config = config.get("data", dict())
-        self.backtest_config = config.get("backtest", dict())
-        self.qlib_client_config = config.get("qlib_client", dict())
+        self.time_config = config.get("time_period", {})
+        self.data_config = config.get("data", {})
+        self.backtest_config = config.get("backtest", {})
+        self.qlib_client_config = config.get("qlib_client", {})
 
 
 class PipelineExperimentConfig:

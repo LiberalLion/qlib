@@ -26,10 +26,7 @@ def get_group_columns(df: pd.DataFrame, group: Union[Text, None]):
     group : str
         the name of the feature group, i.e. the first level value of the group index.
     """
-    if group is None:
-        return df.columns
-    else:
-        return df.columns[df.columns.get_loc(group)]
+    return df.columns if group is None else df.columns[df.columns.get_loc(group)]
 
 
 class Processor(Serializable):

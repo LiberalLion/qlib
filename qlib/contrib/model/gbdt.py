@@ -17,8 +17,7 @@ class LGBModel(ModelFT, LightGBMFInt):
     def __init__(self, loss="mse", **kwargs):
         if loss not in {"mse", "binary"}:
             raise NotImplementedError
-        self.params = {"objective": loss, "verbosity": -1}
-        self.params.update(kwargs)
+        self.params = {"objective": loss, "verbosity": -1} | kwargs
         self.model = None
 
     def _prepare_data(self, dataset: DatasetH):

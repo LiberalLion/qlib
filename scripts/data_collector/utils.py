@@ -139,8 +139,8 @@ def get_calendar_list_by_ratio(
 
     _number_all_funds = len(file_list)
 
-    logger.info(f"count how many funds trade in this day......")
-    _dict_count_trade = dict()  # dict{date:count}
+    logger.info("count how many funds trade in this day......")
+    _dict_count_trade = {}
     _fun = partial(return_date_list, date_field_name)
     all_oldest_list = []
     with tqdm(total=_number_all_funds) as p_bar:
@@ -156,21 +156,20 @@ def get_calendar_list_by_ratio(
 
                 p_bar.update()
 
-    logger.info(f"count how many funds have founded in this day......")
-    _dict_count_founding = {date: _number_all_funds for date in _dict_count_trade.keys()}  # dict{date:count}
+    logger.info("count how many funds have founded in this day......")
+    _dict_count_founding = {date: _number_all_funds for date in _dict_count_trade}
     with tqdm(total=_number_all_funds) as p_bar:
         for oldest_date in all_oldest_list:
-            for date in _dict_count_founding.keys():
+            for date in _dict_count_founding:
                 if date < oldest_date:
                     _dict_count_founding[date] -= 1
 
-    calendar = [
+    return [
         date
         for date in _dict_count_trade
-        if _dict_count_trade[date] >= max(int(_dict_count_founding[date] * threshold), minimum_count)
+        if _dict_count_trade[date]
+        >= max(int(_dict_count_founding[date] * threshold), minimum_count)
     ]
-
-    return calendar
 
 
 def get_hs_stock_symbols() -> list:
@@ -311,7 +310,7 @@ def get_in_stock_symbols(qlib_data_path: [str, Path] = None) -> list:
 
     @deco_retry
     def _get_nifty():
-        url = f"https://www1.nseindia.com/content/equities/EQUITY_L.csv"
+        url = "https://www1.nseindia.com/content/equities/EQUITY_L.csv"
         df = pd.read_csv(url)
         df = df.rename(columns={"SYMBOL": "Symbol"})
         df["Symbol"] = df["Symbol"] + ".NS"
@@ -391,10 +390,7 @@ def symbol_suffix_to_prefix(symbol: str, capital: bool = True) -> str:
 
     """
     code, exchange = symbol.split(".")
-    if exchange.lower() in ["sh", "ss"]:
-        res = f"sh{code}"
-    else:
-        res = f"{exchange}{code}"
+    res = f"sh{code}" if exchange.lower() in ["sh", "ss"] else f"{exchange}{code}"
     return res.upper() if capital else res.lower()
 
 
@@ -485,15 +481,14 @@ def generate_minutes_calendar_from_daily(
     daily_format: str = "%Y-%m-%d"
     res = []
     for _day in calendars:
-        for _range in [am_range, pm_range]:
-            res.append(
-                pd.date_range(
-                    f"{pd.Timestamp(_day).strftime(daily_format)} {_range[0]}",
-                    f"{pd.Timestamp(_day).strftime(daily_format)} {_range[1]}",
-                    freq=freq,
-                )
+        res.extend(
+            pd.date_range(
+                f"{pd.Timestamp(_day).strftime(daily_format)} {_range[0]}",
+                f"{pd.Timestamp(_day).strftime(daily_format)} {_range[1]}",
+                freq=freq,
             )
-
+            for _range in [am_range, pm_range]
+        )
     return pd.Index(sorted(set(np.hstack(res))))
 
 

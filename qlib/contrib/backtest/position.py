@@ -37,11 +37,12 @@ class Position:
         self.position["today_account_value"] = today_account_value
 
     def init_stock(self, stock_id, amount, price=None):
-        self.position[stock_id] = {}
-        self.position[stock_id]["count"] = 0  # update count in the end of this date
-        self.position[stock_id]["amount"] = amount
-        self.position[stock_id]["price"] = price
-        self.position[stock_id]["weight"] = 0  # update the weight in the end of the trade date
+        self.position[stock_id] = {
+            "count": 0,
+            "amount": amount,
+            "price": price,
+            "weight": 0,
+        }
 
     def buy_stock(self, stock_id, trade_val, cost, trade_price):
         trade_amount = trade_val / trade_price
@@ -56,17 +57,16 @@ class Position:
     def sell_stock(self, stock_id, trade_val, cost, trade_price):
         trade_amount = trade_val / trade_price
         if stock_id not in self.position:
-            raise KeyError("{} not in current position".format(stock_id))
-        else:
-            # decrease the amount of stock
-            self.position[stock_id]["amount"] -= trade_amount
+            raise KeyError(f"{stock_id} not in current position")
+        # decrease the amount of stock
+        self.position[stock_id]["amount"] -= trade_amount
             # check if to delete
-            if self.position[stock_id]["amount"] < -1e-5:
-                raise ValueError(
-                    "only have {} {}, require {}".format(self.position[stock_id]["amount"], stock_id, trade_amount)
-                )
-            elif abs(self.position[stock_id]["amount"]) <= 1e-5:
-                self.del_stock(stock_id)
+        if self.position[stock_id]["amount"] < -1e-5:
+            raise ValueError(
+                f'only have {self.position[stock_id]["amount"]} {stock_id}, require {trade_amount}'
+            )
+        elif abs(self.position[stock_id]["amount"]) <= 1e-5:
+            self.del_stock(stock_id)
 
         self.position["cash"] += trade_val - cost
 
@@ -82,7 +82,7 @@ class Position:
             # SELL
             self.sell_stock(order.stock_id, trade_val, cost, trade_price)
         else:
-            raise NotImplementedError("do not suppotr order direction {}".format(order.direction))
+            raise NotImplementedError(f"do not suppotr order direction {order.direction}")
 
     def update_stock_price(self, stock_id, price):
         self.position[stock_id]["price"] = price
@@ -98,10 +98,10 @@ class Position:
 
     def calculate_stock_value(self):
         stock_list = self.get_stock_list()
-        value = 0
-        for stock_id in stock_list:
-            value += self.position[stock_id]["amount"] * self.position[stock_id]["price"]
-        return value
+        return sum(
+            self.position[stock_id]["amount"] * self.position[stock_id]["price"]
+            for stock_id in stock_list
+        )
 
     def calculate_value(self):
         value = self.calculate_stock_value()
@@ -109,8 +109,7 @@ class Position:
         return value
 
     def get_stock_list(self):
-        stock_list = list(set(self.position.keys()) - {"cash", "today_account_value"})
-        return stock_list
+        return list(set(self.position.keys()) - {"cash", "today_account_value"})
 
     def get_stock_price(self, code):
         return self.position[code]["price"]
@@ -129,11 +128,11 @@ class Position:
 
     def get_stock_amount_dict(self):
         """generate stock amount dict {stock_id : amount of stock}"""
-        d = {}
         stock_list = self.get_stock_list()
-        for stock_code in stock_list:
-            d[stock_code] = self.get_stock_amount(code=stock_code)
-        return d
+        return {
+            stock_code: self.get_stock_amount(code=stock_code)
+            for stock_code in stock_list
+        }
 
     def get_stock_weight_dict(self, only_stock=False):
         """get_stock_weight_dict
@@ -147,11 +146,13 @@ class Position:
             position_value = self.calculate_stock_value()
         else:
             position_value = self.calculate_value()
-        d = {}
         stock_list = self.get_stock_list()
-        for stock_code in stock_list:
-            d[stock_code] = self.position[stock_code]["amount"] * self.position[stock_code]["price"] / position_value
-        return d
+        return {
+            stock_code: self.position[stock_code]["amount"]
+            * self.position[stock_code]["price"]
+            / position_value
+            for stock_code in stock_list
+        }
 
     def add_count_all(self):
         stock_list = self.get_stock_list()

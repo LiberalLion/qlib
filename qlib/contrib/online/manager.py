@@ -61,18 +61,16 @@ class UserManager:
                 user : User()
         """
         account_path = self.data_path / user_id
-        strategy_file = self.data_path / user_id / "strategy_{}.pickle".format(user_id)
-        model_file = self.data_path / user_id / "model_{}.pickle".format(user_id)
+        strategy_file = self.data_path / user_id / f"strategy_{user_id}.pickle"
+        model_file = self.data_path / user_id / f"model_{user_id}.pickle"
         cur_user_list = list(self.users)
         if user_id in cur_user_list:
-            raise ValueError("User {} has been loaded".format(user_id))
-        else:
-            trade_account = Account(0)
-            trade_account.load_account(account_path)
-            strategy = load_instance(strategy_file)
-            model = load_instance(model_file)
-            user = User(account=trade_account, strategy=strategy, model=model)
-            return user
+            raise ValueError(f"User {user_id} has been loaded")
+        trade_account = Account(0)
+        trade_account.load_account(account_path)
+        strategy = load_instance(strategy_file)
+        model = load_instance(model_file)
+        return User(account=trade_account, strategy=strategy, model=model)
 
     def save_user_data(self, user_id):
         """
@@ -80,16 +78,16 @@ class UserManager:
             Parameter
                 user_id : string
         """
-        if not user_id in self.users:
-            raise ValueError("Cannot find user {}".format(user_id))
+        if user_id not in self.users:
+            raise ValueError(f"Cannot find user {user_id}")
         self.users[user_id].account.save_account(self.data_path / user_id)
         save_instance(
             self.users[user_id].strategy,
-            self.data_path / user_id / "strategy_{}.pickle".format(user_id),
+            self.data_path / user_id / f"strategy_{user_id}.pickle",
         )
         save_instance(
             self.users[user_id].model,
-            self.data_path / user_id / "model_{}.pickle".format(user_id),
+            self.data_path / user_id / f"model_{user_id}.pickle",
         )
 
     def add_user(self, user_id, config_file, add_date):
@@ -104,10 +102,10 @@ class UserManager:
         """
         config_file = pathlib.Path(config_file)
         if not config_file.exists():
-            raise ValueError("Cannot find config file {}".format(config_file))
+            raise ValueError(f"Cannot find config file {config_file}")
         user_path = self.data_path / user_id
         if user_path.exists():
-            raise ValueError("User data for {} already exists".format(user_id))
+            raise ValueError(f"User data for {user_id} already exists")
 
         with config_file.open("r") as fp:
             config = yaml.safe_load(fp)
@@ -124,8 +122,10 @@ class UserManager:
 
         # save user
         user_path.mkdir()
-        save_instance(model, self.data_path / user_id / "model_{}.pickle".format(user_id))
-        save_instance(strategy, self.data_path / user_id / "strategy_{}.pickle".format(user_id))
+        save_instance(model, self.data_path / user_id / f"model_{user_id}.pickle")
+        save_instance(
+            strategy, self.data_path / user_id / f"strategy_{user_id}.pickle"
+        )
         trade_account.save_account(self.data_path / user_id)
         user_record = pd.read_csv(self.users_file, index_col=0)
         user_record.loc[user_id] = [add_date]
@@ -140,7 +140,7 @@ class UserManager:
         """
         user_path = self.data_path / user_id
         if not user_path.exists():
-            raise ValueError("Cannot find user data {}".format(user_id))
+            raise ValueError(f"Cannot find user data {user_id}")
         shutil.rmtree(user_path)
         user_record = pd.read_csv(self.users_file, index_col=0)
         user_record.drop([user_id], inplace=True)

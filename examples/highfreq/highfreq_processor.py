@@ -67,9 +67,8 @@ class HighFreqNorm(Processor):
         # Reshape is specifically for adapting to RL high-freq executor
         feat = df_values[:, [0, 1, 2, 3, 4, 10]].reshape(-1, 6 * 240)
         feat_1 = df_values[:, [5, 6, 7, 8, 9, 11]].reshape(-1, 6 * 240)
-        df_new_features = pd.DataFrame(
+        return pd.DataFrame(
             data=np.concatenate((feat, feat_1), axis=1),
             index=idx,
             columns=["FEATURE_%d" % i for i in range(12 * 240)],
         ).sort_index()
-        return df_new_features

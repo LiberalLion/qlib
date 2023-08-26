@@ -58,7 +58,7 @@ class RecordTemp:
         Return
         ------
         """
-        raise NotImplementedError(f"Please implement the `generate` method.")
+        raise NotImplementedError("Please implement the `generate` method.")
 
     def load(self, name):
         """
@@ -78,9 +78,7 @@ class RecordTemp:
         ------
         The stored records.
         """
-        # try to load the saved object
-        obj = self.recorder.load_object(name)
-        return obj
+        return self.recorder.load_object(name)
 
     def list(self):
         """
@@ -101,11 +99,7 @@ class RecordTemp:
         FileExistsError: whether the records are stored properly.
         """
         artifacts = set(self.recorder.list_artifacts())
-        if parent:
-            # Downcasting have to be done here instead of using `super`
-            flist = self.__class__.__base__.list(self)  # pylint: disable=E1101
-        else:
-            flist = self.list()
+        flist = self.__class__.__base__.list(self) if parent else self.list()
         for item in flist:
             if item not in artifacts:
                 raise FileExistsError(item)
@@ -189,27 +183,25 @@ class HFSignalRecord(SignalRecord):
             "Long precision": long_pre.mean(),
             "Short precision": short_pre.mean(),
         }
-        objects = {"ic.pkl": ic, "ric.pkl": ric}
-        objects.update({"long_pre.pkl": long_pre, "short_pre.pkl": short_pre})
+        objects = {"ic.pkl": ic, "ric.pkl": ric} | {
+            "long_pre.pkl": long_pre,
+            "short_pre.pkl": short_pre,
+        }
         long_short_r, long_avg_r = calc_long_short_return(pred.iloc[:, 0], raw_label.iloc[:, 0])
-        metrics.update(
-            {
-                "Long-Short Average Return": long_short_r.mean(),
-                "Long-Short Average Sharpe": long_short_r.mean() / long_short_r.std(),
-            }
-        )
-        objects.update(
-            {
-                "long_short_r.pkl": long_short_r,
-                "long_avg_r.pkl": long_avg_r,
-            }
-        )
+        metrics |= {
+            "Long-Short Average Return": long_short_r.mean(),
+            "Long-Short Average Sharpe": long_short_r.mean() / long_short_r.std(),
+        }
+        objects |= {
+            "long_short_r.pkl": long_short_r,
+            "long_avg_r.pkl": long_avg_r,
+        }
         self.recorder.log_metrics(**metrics)
         self.recorder.save_objects(**objects, artifact_path=self.get_path())
         pprint(metrics)
 
     def list(self):
-        paths = [
+        return [
             self.get_path("ic.pkl"),
             self.get_path("ric.pkl"),
             self.get_path("long_pre.pkl"),
@@ -217,7 +209,6 @@ class HFSignalRecord(SignalRecord):
             self.get_path("long_short_r.pkl"),
             self.get_path("long_avg_r.pkl"),
         ]
-        return paths
 
 
 class SigAnaRecord(SignalRecord):
@@ -242,7 +233,7 @@ class SigAnaRecord(SignalRecord):
         pred = self.load("pred.pkl")
         label = self.load("label.pkl")
         if label is None or not isinstance(label, pd.DataFrame) or label.empty:
-            logger.warn(f"Empty label.")
+            logger.warn("Empty label.")
             return
         ic, ric = calc_ic(pred.iloc[:, 0], label.iloc[:, self.label_col])
         metrics = {
@@ -254,20 +245,20 @@ class SigAnaRecord(SignalRecord):
         objects = {"ic.pkl": ic, "ric.pkl": ric}
         if self.ana_long_short:
             long_short_r, long_avg_r = calc_long_short_return(pred.iloc[:, 0], label.iloc[:, self.label_col])
-            metrics.update(
-                {
-                    "Long-Short Ann Return": long_short_r.mean() * self.ann_scaler,
-                    "Long-Short Ann Sharpe": long_short_r.mean() / long_short_r.std() * self.ann_scaler ** 0.5,
-                    "Long-Avg Ann Return": long_avg_r.mean() * self.ann_scaler,
-                    "Long-Avg Ann Sharpe": long_avg_r.mean() / long_avg_r.std() * self.ann_scaler ** 0.5,
-                }
-            )
-            objects.update(
-                {
-                    "long_short_r.pkl": long_short_r,
-                    "long_avg_r.pkl": long_avg_r,
-                }
-            )
+            metrics |= {
+                "Long-Short Ann Return": long_short_r.mean() * self.ann_scaler,
+                "Long-Short Ann Sharpe": long_short_r.mean()
+                / long_short_r.std()
+                * self.ann_scaler**0.5,
+                "Long-Avg Ann Return": long_avg_r.mean() * self.ann_scaler,
+                "Long-Avg Ann Sharpe": long_avg_r.mean()
+                / long_avg_r.std()
+                * self.ann_scaler**0.5,
+            }
+            objects |= {
+                "long_short_r.pkl": long_short_r,
+                "long_avg_r.pkl": long_avg_r,
+            }
         self.recorder.log_metrics(**metrics)
         self.recorder.save_objects(**objects, artifact_path=self.get_path())
         pprint(metrics)
@@ -324,16 +315,18 @@ class PortAnaRecord(SignalRecord):
             **{"positions_normal.pkl": positions_normal},
             artifact_path=PortAnaRecord.get_path(),
         )
-        order_normal = report_dict.get("order_list")
-        if order_normal:
+        if order_normal := report_dict.get("order_list"):
             self.recorder.save_objects(
                 **{"order_normal.pkl": order_normal},
                 artifact_path=PortAnaRecord.get_path(),
             )
 
         # analysis
-        analysis = dict()
-        analysis["excess_return_without_cost"] = risk_analysis(report_normal["return"] - report_normal["bench"])
+        analysis = {
+            "excess_return_without_cost": risk_analysis(
+                report_normal["return"] - report_normal["bench"]
+            )
+        }
         analysis["excess_return_with_cost"] = risk_analysis(
             report_normal["return"] - report_normal["bench"] - report_normal["cost"]
         )

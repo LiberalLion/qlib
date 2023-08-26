@@ -239,12 +239,17 @@ class Alpha158(DataHandlerLP):
             feature = config["price"].get("feature", ["OPEN", "HIGH", "LOW", "CLOSE", "VWAP"])
             for field in feature:
                 field = field.lower()
-                fields += ["Ref($%s, %d)/$close" % (field, d) if d != 0 else "$%s/$close" % field for d in windows]
+                fields += [
+                    "Ref($%s, %d)/$close" % (field, d)
+                    if d != 0
+                    else f"${field}/$close"
+                    for d in windows
+                ]
                 names += [field.upper() + str(d) for d in windows]
         if "volume" in config:
             windows = config["volume"].get("windows", range(5))
             fields += ["Ref($volume, %d)/$volume" % d if d != 0 else "$volume/$volume" for d in windows]
-            names += ["VOLUME" + str(d) for d in windows]
+            names += [f"VOLUME{str(d)}" for d in windows]
         if "rolling" in config:
             windows = config["rolling"].get("windows", [5, 10, 20, 30, 60])
             include = config["rolling"].get("include", None)

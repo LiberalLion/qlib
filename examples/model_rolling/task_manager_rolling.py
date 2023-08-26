@@ -86,9 +86,7 @@ class RollingTaskExample:
         def my_filter(recorder):
             # only choose the results of "LGBModel"
             model_key, rolling_key = rec_key(recorder)
-            if model_key == "LGBModel":
-                return True
-            return False
+            return model_key == "LGBModel"
 
         collector = RecorderCollector(
             experiment=self.experiment_name,

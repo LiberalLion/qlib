@@ -199,8 +199,7 @@ def get_decoder_mask(self_attn_inputs):
     """
     len_s = tf.shape(self_attn_inputs)[1]
     bs = tf.shape(self_attn_inputs)[:1]
-    mask = K.cumsum(tf.eye(len_s, batch_shape=bs), 1)
-    return mask
+    return K.cumsum(tf.eye(len_s, batch_shape=bs), 1)
 
 
 class ScaledDotProductAttention:
@@ -431,9 +430,9 @@ class TemporalFusionTransformer:
         self._attention_components = None
         self._prediction_parts = None
 
-        print("*** {} params ***".format(self.name))
+        print(f"*** {self.name} params ***")
         for k in params:
-            print("# {} = {}".format(k, params[k]))
+            print(f"# {k} = {params[k]}")
 
         # Build model
         self.model = self.build_model()
@@ -576,7 +575,7 @@ class TemporalFusionTransformer:
         else:
             TFTDataCache.update(self._batch_data(data), cache_key)
 
-        print('Cached data "{}" updated'.format(cache_key))
+        print(f'Cached data "{cache_key}" updated')
 
     def _batch_sampled_data(self, data, max_samples):
         """Samples segments into a compatible format.
@@ -590,7 +589,7 @@ class TemporalFusionTransformer:
         """
 
         if max_samples < 1:
-            raise ValueError("Illegal number of samples specified! samples={}".format(max_samples))
+            raise ValueError(f"Illegal number of samples specified! samples={max_samples}")
 
         id_col = self._get_single_col_by_type(InputTypes.ID)
         time_col = self._get_single_col_by_type(InputTypes.TIME)
@@ -601,7 +600,7 @@ class TemporalFusionTransformer:
         valid_sampling_locations = []
         split_data_map = {}
         for identifier, df in data.groupby(id_col):
-            print("Getting locations for {}".format(identifier))
+            print(f"Getting locations for {identifier}")
             num_entries = len(df)
             if num_entries >= self.time_steps:
                 valid_sampling_locations += [
@@ -615,13 +614,15 @@ class TemporalFusionTransformer:
         identifiers = np.empty((max_samples, self.time_steps, 1), dtype=object)
 
         if max_samples > 0 and len(valid_sampling_locations) > max_samples:
-            print("Extracting {} samples...".format(max_samples))
+            print(f"Extracting {max_samples} samples...")
             ranges = [
                 valid_sampling_locations[i]
                 for i in np.random.choice(len(valid_sampling_locations), max_samples, replace=False)
             ]
         else:
-            print("Max samples={} exceeds # available segments={}".format(max_samples, len(valid_sampling_locations)))
+            print(
+                f"Max samples={max_samples} exceeds # available segments={len(valid_sampling_locations)}"
+            )
             ranges = valid_sampling_locations
 
         id_col = self._get_single_col_by_type(InputTypes.ID)
@@ -639,15 +640,15 @@ class TemporalFusionTransformer:
             time[i, :, 0] = sliced[time_col]
             identifiers[i, :, 0] = sliced[id_col]
 
-        sampled_data = {
+        return {
             "inputs": inputs,
             "outputs": outputs[:, self.num_encoder_steps :, :],
-            "active_entries": np.ones_like(outputs[:, self.num_encoder_steps :, :]),
+            "active_entries": np.ones_like(
+                outputs[:, self.num_encoder_steps :, :]
+            ),
             "time": time,
             "identifier": identifiers,
         }
-
-        return sampled_data
 
     def _batch_data(self, data):
         """Batches data for training.
@@ -1233,7 +1234,7 @@ class TemporalFusionTransformer:
 
     def get_keras_saved_path(self, model_folder):
         """Returns path to keras checkpoint."""
-        return os.path.join(model_folder, "{}.check".format(self.name))
+        return os.path.join(model_folder, f"{self.name}.check")
 
     def save(self, model_folder):
         """Saves optimal TFT weights.
@@ -1260,7 +1261,7 @@ class TemporalFusionTransformer:
         if use_keras_loadings:
             # Loads temporary Keras model saved during training.
             serialisation_path = self.get_keras_saved_path(model_folder)
-            print("Loading model from {}".format(serialisation_path))
+            print(f"Loading model from {serialisation_path}")
             self.model.load_weights(serialisation_path)
         else:
             # Loads tensorflow graph for optimal models.

@@ -160,11 +160,7 @@ def _pred_ic(pred_label: pd.DataFrame = None, rank: bool = False, **kwargs) -> t
     dist = stats.norm
     _qqplot_fig = _plot_qq(ic, dist)
 
-    if isinstance(dist, stats.norm.__class__):
-        dist_name = "Normal"
-    else:
-        dist_name = "Unknown"
-
+    dist_name = "Normal" if isinstance(dist, stats.norm.__class__) else "Unknown"
     _bin_size = ((_ic_df.max() - _ic_df.min()) / 20).min()
     _sub_graph_data = [
         (
@@ -181,12 +177,12 @@ def _pred_ic(pred_label: pd.DataFrame = None, rank: bool = False, **kwargs) -> t
     ]
     ic_hist_figure = SubplotsGraph(
         _ic_df.dropna(),
-        kind_map=dict(kind="HistogramGraph", kwargs=dict()),
+        kind_map=dict(kind="HistogramGraph", kwargs={}),
         subplots_kwargs=dict(
             rows=1,
             cols=2,
             print_grid=False,
-            subplot_titles=["IC", "IC %s Dist. Q-Q" % dist_name],
+            subplot_titles=["IC", f"IC {dist_name} Dist. Q-Q"],
         ),
         sub_graph_data=_sub_graph_data,
         layout=dict(
@@ -254,14 +250,13 @@ def ic_figure(ic_df: pd.DataFrame, show_nature_day=True, **kwargs) -> go.Figure:
         ic_df = ic_df.reindex(date_index)
     # FIXME: support HIGH-FREQ
     ic_df.index = ic_df.index.strftime("%Y-%m-%d")
-    ic_bar_figure = BarGraph(
+    return BarGraph(
         ic_df,
         layout=dict(
             title="Information Coefficient (IC)",
             xaxis=dict(type="category", tickangle=45),
         ),
     ).figure
-    return ic_bar_figure
 
 
 def model_performance_graph(

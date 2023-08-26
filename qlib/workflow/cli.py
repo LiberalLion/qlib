@@ -13,10 +13,7 @@ from qlib.model.trainer import task_train
 
 
 def get_path_list(path):
-    if isinstance(path, str):
-        return [path]
-    else:
-        return list(path)
+    return [path] if isinstance(path, str) else list(path)
 
 
 def sys_config(config, config_path):
@@ -50,7 +47,9 @@ def workflow(config_path, experiment_name="workflow", uri_folder="mlruns"):
     sys_config(config, config_path)
 
     exp_manager = C["exp_manager"]
-    exp_manager["kwargs"]["uri"] = "file:" + str(Path(os.getcwd()).resolve() / uri_folder)
+    exp_manager["kwargs"][
+        "uri"
+    ] = f"file:{str(Path(os.getcwd()).resolve() / uri_folder)}"
     qlib.init(**config.get("qlib_init"), exp_manager=exp_manager)
 
     recorder = task_train(config.get("task"), experiment_name=experiment_name)

@@ -15,8 +15,7 @@ class XGBModel(Model, FeatureInt):
     """XGBModel Model"""
 
     def __init__(self, **kwargs):
-        self._params = {}
-        self._params.update(kwargs)
+        self._params = {} | kwargs
         self.model = None
 
     def fit(
