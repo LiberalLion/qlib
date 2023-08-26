@@ -39,10 +39,10 @@ class StructuredCovEstimator(RiskModel):
             num_factors (int): number of components to keep.
             kwargs: see `RiskModel` for more information
         """
-        if "nan_option" in kwargs.keys():
-            assert kwargs["nan_option"] in [self.DEFAULT_NAN_OPTION], "nan_option={} is not supported".format(
-                kwargs["nan_option"]
-            )
+        if "nan_option" in kwargs:
+            assert kwargs["nan_option"] in [
+                self.DEFAULT_NAN_OPTION
+            ], f'nan_option={kwargs["nan_option"]} is not supported'
         else:
             kwargs["nan_option"] = self.DEFAULT_NAN_OPTION
 
@@ -51,7 +51,7 @@ class StructuredCovEstimator(RiskModel):
         assert factor_model in [
             self.FACTOR_MODEL_PCA,
             self.FACTOR_MODEL_FA,
-        ], "factor_model={} is not supported".format(factor_model)
+        ], f"factor_model={factor_model} is not supported"
         self.solver = PCA if factor_model == self.FACTOR_MODEL_PCA else FactorAnalysis
 
         self.num_factors = num_factors
@@ -79,6 +79,4 @@ class StructuredCovEstimator(RiskModel):
         if return_decomposed_components:
             return F, cov_b, var_u
 
-        cov_x = F @ cov_b @ F.T + np.diag(var_u)
-
-        return cov_x
+        return F @ cov_b @ F.T + np.diag(var_u)

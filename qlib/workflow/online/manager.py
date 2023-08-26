@@ -118,7 +118,7 @@ class OnlineManager(Serializable):
             online_models = strategy.prepare_online_models(models, **model_kwargs)
             self.history.setdefault(self.cur_time, {})[strategy] = online_models
 
-        if not self.status == self.STATUS_SIMULATING or not self.trainer.is_delay():
+        if self.status != self.STATUS_SIMULATING or not self.trainer.is_delay():
             for strategy, models in zip(strategies, models_list):
                 models = self.trainer.end_train(models, experiment_name=strategy.name_id)
 
@@ -163,7 +163,7 @@ class OnlineManager(Serializable):
             if self.status == self.STATUS_NORMAL:
                 strategy.tool.update_online_pred()
 
-        if not self.status == self.STATUS_SIMULATING or not self.trainer.is_delay():
+        if self.status != self.STATUS_SIMULATING or not self.trainer.is_delay():
             for strategy, models in zip(self.strategies, models_list):
                 models = self.trainer.end_train(models, experiment_name=strategy.name_id)
             self.prepare_signals(**signal_kwargs)
@@ -179,9 +179,10 @@ class OnlineManager(Serializable):
         Returns:
             MergeCollector: the collector to merge other collectors.
         """
-        collector_dict = {}
-        for strategy in self.strategies:
-            collector_dict[strategy.name_id] = strategy.get_collector(**kwargs)
+        collector_dict = {
+            strategy.name_id: strategy.get_collector(**kwargs)
+            for strategy in self.strategies
+        }
         return MergeCollector(collector_dict, process_list=[])
 
     def add_strategy(self, strategies: Union[OnlineStrategy, List[OnlineStrategy]]):
@@ -283,7 +284,7 @@ class OnlineManager(Serializable):
 
         # FIXME: get logging level firstly and restore it here
         set_global_logger_level(logging.DEBUG)
-        self.logger.info(f"Finished preparing signals")
+        self.logger.info("Finished preparing signals")
         self.status = self.STATUS_NORMAL
         return self.get_signals()
 

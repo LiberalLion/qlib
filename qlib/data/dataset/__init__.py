@@ -218,8 +218,7 @@ class DatasetH(Dataset):
         NotImplementedError:
         """
         logger = get_module_logger("DatasetH")
-        fetch_kwargs = {"col_set": col_set}
-        fetch_kwargs.update(kwargs)
+        fetch_kwargs = {"col_set": col_set} | kwargs
         if "data_key" in getfullargspec(self.handler.fetch).args:
             fetch_kwargs["data_key"] = data_key
         else:
@@ -233,7 +232,7 @@ class DatasetH(Dataset):
         elif isinstance(segments, slice):
             return self._prepare_seg(segments, **fetch_kwargs)
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
 
 
 class TSDataSampler:
@@ -443,7 +442,7 @@ class TSDataSampler:
             # NOTE: This relies on the idx_df columns sorted in `__init__`
             j = bisect.bisect_left(self.idx_df.columns, inst)
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
         return i, j
 
     def __getitem__(self, idx: Union[int, Tuple[object, str], List[int]]):
@@ -531,9 +530,7 @@ class TSDatasetH(DatasetH):
         pad_start_idx = max(0, start_idx - self.step_len)
         pad_start = self.cal[pad_start_idx]
 
-        # TSDatasetH will retrieve more data for complete
-        data = super()._prepare_seg(slice(pad_start, end), **kwargs)
-        return data
+        return super()._prepare_seg(slice(pad_start, end), **kwargs)
 
     def _prepare_seg(self, slc: slice, **kwargs) -> TSDataSampler:
         """
@@ -553,5 +550,11 @@ class TSDatasetH(DatasetH):
         else:
             flt_data = None
 
-        tsds = TSDataSampler(data=data, start=start, end=end, step_len=self.step_len, dtype=dtype, flt_data=flt_data)
-        return tsds
+        return TSDataSampler(
+            data=data,
+            start=start,
+            end=end,
+            step_len=self.step_len,
+            dtype=dtype,
+            flt_data=flt_data,
+        )

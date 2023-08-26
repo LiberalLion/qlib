@@ -42,7 +42,7 @@ class Collector(Serializable):
 
             ......
         """
-        raise NotImplementedError(f"Please implement the `collect` method.")
+        raise NotImplementedError("Please implement the `collect` method.")
 
     @staticmethod
     def process_collect(collected_dict, process_list=[], *args, **kwargs) -> dict:
@@ -191,13 +191,13 @@ class RecorderCollector(Collector):
         collect_dict = {}
         # filter records
         recs = self.experiment.list_recorders(**self.list_kwargs)
-        recs_flt = {}
-        for rid, rec in recs.items():
-            if rec_filter_func is None or rec_filter_func(rec):
-                recs_flt[rid] = rec
-
+        recs_flt = {
+            rid: rec
+            for rid, rec in recs.items()
+            if rec_filter_func is None or rec_filter_func(rec)
+        }
         logger = get_module_logger("RecorderCollector")
-        for _, rec in recs_flt.items():
+        for rec in recs_flt.values():
             rec_key = self.rec_key_func(rec)
             for key in artifacts_key:
                 if self.ART_KEY_RAW == key:

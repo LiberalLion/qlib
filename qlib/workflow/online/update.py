@@ -102,7 +102,7 @@ class PredUpdater(RecordUpdater):
         self.freq = freq
         self.rmdl = RMDLoader(rec=record)
 
-        if to_date == None:
+        if to_date is None:
             to_date = D.calendar(freq=freq)[-1]
         self.to_date = pd.Timestamp(to_date)
         # FIXME: it will raise error when running routine with delay trainer
@@ -122,8 +122,9 @@ class PredUpdater(RecordUpdater):
         start_time_buffer = get_date_by_shift(self.last_end, -self.hist_ref + 1, clip_shift=False, freq=self.freq)
         start_time = get_date_by_shift(self.last_end, 1, freq=self.freq)
         seg = {"test": (start_time, self.to_date)}
-        dataset = self.rmdl.get_dataset(start_time=start_time_buffer, end_time=self.to_date, segments=seg)
-        return dataset
+        return self.rmdl.get_dataset(
+            start_time=start_time_buffer, end_time=self.to_date, segments=seg
+        )
 
     def update(self, dataset: DatasetH = None):
         """

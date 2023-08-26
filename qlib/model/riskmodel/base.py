@@ -68,9 +68,6 @@ class RiskModel(BaseModel):
                     X = X.iloc[:, 0].unstack(level="instrument")  # always use the first column
                 else:
                     X = X.unstack(level="instrument")
-            else:
-                # X is 2D DataFrame
-                pass
             columns = X.columns  # will be used to restore dataframe
             X = X.values
 

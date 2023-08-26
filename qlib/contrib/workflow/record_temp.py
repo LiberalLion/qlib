@@ -85,5 +85,4 @@ class SignalMseRecord(SignalRecord):
         logger.info("The evaluation results in SignalMseRecord is {:}".format(metrics))
 
     def list(self):
-        paths = [self.get_path("mse.pkl"), self.get_path("rmse.pkl")]
-        return paths
+        return [self.get_path("mse.pkl"), self.get_path("rmse.pkl")]

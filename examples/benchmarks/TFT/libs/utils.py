@@ -36,7 +36,7 @@ def get_single_col_by_input_type(input_type, column_definition):
     l = [tup[0] for tup in column_definition if tup[2] == input_type]
 
     if len(l) != 1:
-        raise ValueError("Invalid number of columns for {}".format(input_type))
+        raise ValueError(f"Invalid number of columns for {input_type}")
 
     return l[0]
 
@@ -73,7 +73,9 @@ def tensorflow_quantile_loss(y, y_pred, quantile):
 
     # Checks quantile
     if quantile < 0 or quantile > 1:
-        raise ValueError("Illegal quantile value={}! Values should be between 0 and 1.".format(quantile))
+        raise ValueError(
+            f"Illegal quantile value={quantile}! Values should be between 0 and 1."
+        )
 
     prediction_underflow = y - y_pred
     q_loss = quantile * tf.maximum(prediction_underflow, 0.0) + (1.0 - quantile) * tf.maximum(
@@ -142,7 +144,7 @@ def get_default_tensorflow_config(tf_device="gpu", gpu_id=0):
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
-        print("Selecting GPU ID={}".format(gpu_id))
+        print(f"Selecting GPU ID={gpu_id}")
 
         tf_config = tf.ConfigProto(log_device_placement=False)
         tf_config.gpu_options.allow_growth = True
@@ -189,7 +191,7 @@ def load(tf_session, model_folder, cp_name, scope=None, verbose=False):
 
     print_weights_in_checkpoint(model_folder, cp_name)
 
-    initial_vars = set([v.name for v in tf.get_default_graph().as_graph_def().node])
+    initial_vars = {v.name for v in tf.get_default_graph().as_graph_def().node}
 
     # Saver
     if scope is None:
@@ -199,7 +201,7 @@ def load(tf_session, model_folder, cp_name, scope=None, verbose=False):
         saver = tf.train.Saver(var_list=var_list, max_to_keep=100000)
     # Load
     saver.restore(tf_session, load_path)
-    all_vars = set([v.name for v in tf.get_default_graph().as_graph_def().node])
+    all_vars = {v.name for v in tf.get_default_graph().as_graph_def().node}
 
     if verbose:
         print("Restored {0}".format(",".join(initial_vars.difference(all_vars))))

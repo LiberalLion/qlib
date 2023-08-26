@@ -79,6 +79,4 @@ class POETCovEstimator(RiskModel):
 
         Rthresh = M - np.diag(np.diag(M)) + np.eye(p)
         SigmaU = (SuDiag ** 0.5).dot(Rthresh).dot(SuDiag ** 0.5)
-        SigmaY = SigmaU + Lowrank
-
-        return SigmaY
+        return SigmaU + Lowrank

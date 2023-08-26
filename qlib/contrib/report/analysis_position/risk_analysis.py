@@ -25,7 +25,7 @@ def _get_risk_analysis_data_with_report(
     :return:
     """
 
-    analysis = dict()
+    analysis = {}
     # if not report_long_short_df.empty:
     #     analysis["pred_long"] = risk_analysis(report_long_short_df["long"])
     #     analysis["pred_short"] = risk_analysis(report_long_short_df["short"])

@@ -94,9 +94,7 @@ class YahooCollector(BaseCollector):
     def init_datetime(self):
         if self.interval == self.INTERVAL_1min:
             self.start_datetime = max(self.start_datetime, self.DEFAULT_START_DATETIME_1MIN)
-        elif self.interval == self.INTERVAL_1d:
-            pass
-        else:
+        elif self.interval != self.INTERVAL_1d:
             raise ValueError(f"interval error: {self.interval}")
 
         self.start_datetime = self.convert_datetime(self.start_datetime, self._timezone)
@@ -316,9 +314,8 @@ class YahooNormalize(BaseNormalize):
         _tmp_series = df["close"].fillna(method="ffill")
         _tmp_shift_series = _tmp_series.shift(1)
         if last_close is not None:
-            _tmp_shift_series.iloc[0] = float(last_close)
-        change_series = _tmp_series / _tmp_shift_series - 1
-        return change_series
+            _tmp_shift_series.iloc[0] = last_close
+        return _tmp_series / _tmp_shift_series - 1
 
     @staticmethod
     def normalize_yahoo(
@@ -426,8 +423,7 @@ class YahooNormalize1d(YahooNormalize, ABC):
             For incremental updates(append) to Yahoo 1D data, user need to use a close that is not 0 on the first trading day of the existing data
         """
         df = df.loc[df["close"].first_valid_index() :]
-        _close = df["close"].iloc[0]
-        return _close
+        return df["close"].iloc[0]
 
     def _manual_adj_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """manual adjust data: All fields (except change) are standardized according to the close of the first day"""
@@ -441,10 +437,7 @@ class YahooNormalize1d(YahooNormalize, ABC):
             # NOTE: retain original adjclose, required for incremental updates
             if _col in [self._symbol_field_name, "adjclose", "change"]:
                 continue
-            if _col == "volume":
-                df[_col] = df[_col] * _close
-            else:
-                df[_col] = df[_col] / _close
+            df[_col] = df[_col] * _close if _col == "volume" else df[_col] / _close
         return df.reset_index()
 
 
@@ -481,8 +474,7 @@ class YahooNormalize1dExtend(YahooNormalize1d):
     def _get_close(self, df: pd.DataFrame, field_name: str):
         _symbol = df.loc[df[self._symbol_field_name].first_valid_index()][self._symbol_field_name].upper()
         _df = self.old_qlib_data.loc(axis=0)[_symbol]
-        _close = _df.loc[_df.last_valid_index()][field_name]
-        return _close
+        return _df.loc[_df.last_valid_index()][field_name]
 
     def _get_first_close(self, df: pd.DataFrame) -> float:
         try:
@@ -667,8 +659,7 @@ class YahooNormalize1min(YahooNormalize, ABC):
                 not_nan_nums += 1
                 _df["paused_num"] = not_nan_nums
                 all_data.append(_df)
-        all_data = all_data[: len(all_data) - all_nan_nums]
-        if all_data:
+        if all_data := all_data[: len(all_data) - all_nan_nums]:
             df = pd.concat(all_data, sort=False)
         else:
             logger.warning(f"data is empty: {_symbol}")
@@ -1063,7 +1054,7 @@ class Run(BaseRun):
         """
 
         if self.interval.lower() != "1d":
-            logger.warning(f"currently supports 1d data updates: --interval 1d")
+            logger.warning("currently supports 1d data updates: --interval 1d")
 
         # start/end date
         if trading_date is None:
@@ -1109,7 +1100,7 @@ class Run(BaseRun):
             importlib.import_module(f"data_collector.{_region}_index.collector"), "get_instruments"
         )
         for _index in index_list:
-            get_instruments(str(qlib_data_1d_dir), _index)
+            get_instruments(qlib_data_1d_dir, _index)
 
 
 if __name__ == "__main__":

@@ -27,14 +27,16 @@ class Client:
         # bind connect/disconnect callbacks
         self.sio.on(
             "connect",
-            lambda: self.logger.debug("Connect to server {}".format(self.sio.connection_url)),
+            lambda: self.logger.debug(
+                f"Connect to server {self.sio.connection_url}"
+            ),
         )
         self.sio.on("disconnect", lambda: self.logger.debug("Disconnect from server!"))
 
     def connect_server(self):
         """Connect to server."""
         try:
-            self.sio.connect("ws://" + self.server_host + ":" + str(self.server_port))
+            self.sio.connect(f"ws://{self.server_host}:{str(self.server_port)}")
         except socketio.exceptions.ConnectionError:
             self.logger.error("Cannot connect to server - check your network or server status")
 
@@ -43,7 +45,7 @@ class Client:
         try:
             self.sio.eio.disconnect(True)
         except Exception as e:
-            self.logger.error("Cannot disconnect from server : %s" % e)
+            self.logger.error(f"Cannot disconnect from server : {e}")
 
     def send_request(self, request_type, request_content, msg_queue, msg_proc_func=None):
         """Send a certain request to server.
@@ -96,7 +98,7 @@ class Client:
         # The pickle is for passing some parameters with special type(such as
         # pd.Timestamp)
         request_content = {"head": head_info, "body": pickle.dumps(request_content)}
-        self.sio.on(request_type + "_response", request_callback)
+        self.sio.on(f"{request_type}_response", request_callback)
         self.logger.debug("try sending")
-        self.sio.emit(request_type + "_request", request_content)
+        self.sio.emit(f"{request_type}_request", request_content)
         self.sio.wait()

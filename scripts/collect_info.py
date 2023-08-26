@@ -26,7 +26,7 @@ class InfoCollector:
 
     def qlib(self):
         """collect qlib related info"""
-        print("Qlib version: {}".format(qlib.__version__))
+        print(f"Qlib version: {qlib.__version__}")
         REQUIRED = [
             "numpy",
             "pandas",

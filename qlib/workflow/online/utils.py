@@ -41,7 +41,7 @@ class OnlineTool:
             tag (str): the tags in `ONLINE_TAG`, `OFFLINE_TAG`
             recorder (Union[list,object]): the model's recorder
         """
-        raise NotImplementedError(f"Please implement the `set_online_tag` method.")
+        raise NotImplementedError("Please implement the `set_online_tag` method.")
 
     def get_online_tag(self, recorder: object) -> str:
         """
@@ -53,7 +53,7 @@ class OnlineTool:
         Returns:
             str: the online tag
         """
-        raise NotImplementedError(f"Please implement the `get_online_tag` method.")
+        raise NotImplementedError("Please implement the `get_online_tag` method.")
 
     def reset_online_tag(self, recorder: Union[list, object]):
         """
@@ -64,7 +64,7 @@ class OnlineTool:
                 the recorder you want to reset to 'online'.
 
         """
-        raise NotImplementedError(f"Please implement the `reset_online_tag` method.")
+        raise NotImplementedError("Please implement the `reset_online_tag` method.")
 
     def online_models(self) -> list:
         """
@@ -73,7 +73,7 @@ class OnlineTool:
         Returns:
             list: a list of `online` models.
         """
-        raise NotImplementedError(f"Please implement the `online_models` method.")
+        raise NotImplementedError("Please implement the `online_models` method.")
 
     def update_online_pred(self, to_date=None):
         """
@@ -83,7 +83,7 @@ class OnlineTool:
             to_date (pd.Timestamp): the pred before this date will be updated. None for updating to the latest.
 
         """
-        raise NotImplementedError(f"Please implement the `update_online_pred` method.")
+        raise NotImplementedError("Please implement the `update_online_pred` method.")
 
 
 class OnlineToolR(OnlineTool):

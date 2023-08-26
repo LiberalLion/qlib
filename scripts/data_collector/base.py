@@ -73,7 +73,9 @@ class BaseCollector(abc.ABC):
         self.max_collector_count = max_collector_count
         self.mini_symbol_map = {}
         self.interval = interval
-        self.check_data_length = max(int(check_data_length) if check_data_length is not None else 0, 0)
+        self.check_data_length = max(
+            check_data_length if check_data_length is not None else 0, 0
+        )
 
         self.start_datetime = self.normalize_start_datetime(start)
         self.end_datetime = self.normalize_end_datetime(end)
@@ -82,7 +84,7 @@ class BaseCollector(abc.ABC):
 
         if limit_nums is not None:
             try:
-                self.instrument_list = self.instrument_list[: int(limit_nums)]
+                self.instrument_list = self.instrument_list[:limit_nums]
             except Exception as e:
                 logger.warning(f"Cannot use limit_nums={limit_nums}, the parameter will be ignored")
 
@@ -186,13 +188,14 @@ class BaseCollector(abc.ABC):
 
     def _collector(self, instrument_list):
 
-        error_symbol = []
         res = Parallel(n_jobs=self.max_workers)(
             delayed(self._simple_collector)(_inst) for _inst in tqdm(instrument_list)
         )
-        for _symbol, _result in zip(instrument_list, res):
-            if _result != self.NORMAL_FLAG:
-                error_symbol.append(_symbol)
+        error_symbol = [
+            _symbol
+            for _symbol, _result in zip(instrument_list, res)
+            if _result != self.NORMAL_FLAG
+        ]
         print(error_symbol)
         logger.info(f"error symbol nums: {len(error_symbol)}")
         logger.info(f"current get symbol nums: {len(instrument_list)}")

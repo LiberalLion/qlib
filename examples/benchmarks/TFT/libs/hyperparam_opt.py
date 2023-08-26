@@ -137,18 +137,20 @@ class HyperparamOptManager:
         missing_fields = [k for k in valid_fields if k not in params]
 
         if invalid_fields:
-            raise ValueError("Invalid Fields Found {} - Valid ones are {}".format(invalid_fields, valid_fields))
+            raise ValueError(
+                f"Invalid Fields Found {invalid_fields} - Valid ones are {valid_fields}"
+            )
         if missing_fields:
-            raise ValueError("Missing Fields Found {} - Valid ones are {}".format(missing_fields, valid_fields))
+            raise ValueError(
+                f"Missing Fields Found {missing_fields} - Valid ones are {valid_fields}"
+            )
 
     def _get_name(self, params):
         """Returns a unique key for the supplied set of params."""
 
         self._check_params(params)
 
-        fields = list(params.keys())
-        fields.sort()
-
+        fields = sorted(params.keys())
         return "_".join([str(params[k]) for k in fields])
 
     def get_next_parameters(self, ranges_to_skip=None):
@@ -163,9 +165,7 @@ class HyperparamOptManager:
         if not isinstance(self.param_ranges, dict):
             raise ValueError("Only works for random search!")
 
-        param_range_keys = list(self.param_ranges.keys())
-        param_range_keys.sort()
-
+        param_range_keys = sorted(self.param_ranges.keys())
         def _get_next():
             """Returns next hyperparameter set per try."""
 
@@ -267,16 +267,14 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
         # Sanity checks
         if worker_number > max_workers:
             raise ValueError(
-                "Worker number ({}) cannot be larger than the total number of workers!".format(max_workers)
+                f"Worker number ({max_workers}) cannot be larger than the total number of workers!"
             )
         if worker_number > search_iterations:
             raise ValueError(
-                "Worker number ({}) cannot be larger than the max search iterations ({})!".format(
-                    worker_number, search_iterations
-                )
+                f"Worker number ({worker_number}) cannot be larger than the max search iterations ({search_iterations})!"
             )
 
-        print("*** Creating hyperparameter manager for worker {} ***".format(worker_number))
+        print(f"*** Creating hyperparameter manager for worker {worker_number} ***")
 
         hyperparam_folder = os.path.join(root_model_folder, str(worker_number))
         super().__init__(param_ranges, fixed_params, hyperparam_folder, override_w_fixed_params=True)
@@ -289,7 +287,9 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
 
         utils.create_folder_if_not_exist(serialised_ranges_folder)
 
-        self.serialised_ranges_path = os.path.join(serialised_ranges_folder, "ranges_{}.csv".format(search_iterations))
+        self.serialised_ranges_path = os.path.join(
+            serialised_ranges_folder, f"ranges_{search_iterations}.csv"
+        )
         self.hyperparam_folder = hyperparam_folder  # override
         self.worker_num = worker_number
         self.total_search_iterations = search_iterations
@@ -299,7 +299,7 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
 
     @property
     def optimisation_completed(self):
-        return False if self.worker_search_queue else True
+        return not self.worker_search_queue
 
     def get_next_parameters(self):
         """Returns next dictionary of hyperparameters to optimise."""
@@ -309,7 +309,7 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
 
         # Always override!
         for k in self.fixed_params:
-            print("Overriding saved {}: {}".format(k, self.fixed_params[k]))
+            print(f"Overriding saved {k}: {self.fixed_params[k]}")
 
             params[k] = self.fixed_params[k]
 
@@ -322,18 +322,13 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
           DataFrame containing hyperparameter combinations.
         """
         print(
-            "Loading params for {} search iterations form {}".format(
-                self.total_search_iterations, self.serialised_ranges_path
-            )
+            f"Loading params for {self.total_search_iterations} search iterations form {self.serialised_ranges_path}"
         )
 
         if os.path.exists(self.serialised_ranges_folder):
-            df = pd.read_csv(self.serialised_ranges_path, index_col=0)
-        else:
-            print("Unable to load - regenerating serach ranges instead")
-            df = self.update_serialised_hyperparam_df()
-
-        return df
+            return pd.read_csv(self.serialised_ranges_path, index_col=0)
+        print("Unable to load - regenerating serach ranges instead")
+        return self.update_serialised_hyperparam_df()
 
     def update_serialised_hyperparam_df(self):
         """Regenerates hyperparameter combinations and saves to file.
@@ -344,9 +339,7 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
         search_df = self._generate_full_hyperparam_df()
 
         print(
-            "Serialising params for {} search iterations to {}".format(
-                self.total_search_iterations, self.serialised_ranges_path
-            )
+            f"Serialising params for {self.total_search_iterations} search iterations to {self.serialised_ranges_path}"
         )
 
         search_df.to_csv(self.serialised_ranges_path)
@@ -372,9 +365,7 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
             name_list.append(name)
             param_list.append(params)
 
-        full_search_df = pd.DataFrame(param_list, index=name_list)
-
-        return full_search_df
+        return pd.DataFrame(param_list, index=name_list)
 
     def clear(self):  # reset when cleared
         """Clears results for hyperparameter manager and resets."""

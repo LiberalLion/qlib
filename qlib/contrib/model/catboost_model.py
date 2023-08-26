@@ -20,8 +20,7 @@ class CatBoostModel(Model, FeatureInt):
         # There are more options
         if loss not in {"RMSE", "Logloss"}:
             raise NotImplementedError
-        self._params = {"loss_function": loss}
-        self._params.update(kwargs)
+        self._params = {"loss_function": loss} | kwargs
         self.model = None
 
     def fit(

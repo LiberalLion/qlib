@@ -86,38 +86,7 @@ class DNNModelPytorch(Model):
         self.weight_decay = weight_decay
 
         self.logger.info(
-            "DNN parameters setting:"
-            "\nlayers : {}"
-            "\nlr : {}"
-            "\nmax_steps : {}"
-            "\nbatch_size : {}"
-            "\nearly_stop_rounds : {}"
-            "\neval_steps : {}"
-            "\nlr_decay : {}"
-            "\nlr_decay_steps : {}"
-            "\noptimizer : {}"
-            "\nloss_type : {}"
-            "\neval_steps : {}"
-            "\nseed : {}"
-            "\ndevice : {}"
-            "\nuse_GPU : {}"
-            "\nweight_decay : {}".format(
-                layers,
-                lr,
-                max_steps,
-                batch_size,
-                early_stop_rounds,
-                eval_steps,
-                lr_decay,
-                lr_decay_steps,
-                optimizer,
-                loss,
-                eval_steps,
-                seed,
-                self.device,
-                self.use_gpu,
-                weight_decay,
-            )
+            f"DNN parameters setting:\nlayers : {layers}\nlr : {lr}\nmax_steps : {max_steps}\nbatch_size : {batch_size}\nearly_stop_rounds : {early_stop_rounds}\neval_steps : {eval_steps}\nlr_decay : {lr_decay}\nlr_decay_steps : {lr_decay_steps}\noptimizer : {optimizer}\nloss_type : {loss}\neval_steps : {eval_steps}\nseed : {seed}\ndevice : {self.device}\nuse_GPU : {self.use_gpu}\nweight_decay : {weight_decay}"
         )
 
         if self.seed is not None:
@@ -125,7 +94,7 @@ class DNNModelPytorch(Model):
             torch.manual_seed(self.seed)
 
         if loss not in {"mse", "binary"}:
-            raise NotImplementedError("loss {} is not supported!".format(loss))
+            raise NotImplementedError(f"loss {loss} is not supported!")
         self._scorer = mean_squared_error if loss == "mse" else roc_auc_score
 
         self.dnn_model = Net(input_dim, output_dim, layers, loss=self.loss_type)
@@ -137,7 +106,7 @@ class DNNModelPytorch(Model):
         elif optimizer.lower() == "gd":
             self.train_optimizer = optim.SGD(self.dnn_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         else:
-            raise NotImplementedError("optimizer {} is not supported!".format(optimizer))
+            raise NotImplementedError(f"optimizer {optimizer} is not supported!")
 
         # Reduce learning rate when loss has stopped decrease
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -264,13 +233,12 @@ class DNNModelPytorch(Model):
     def get_loss(self, pred, w, target, loss_type):
         if loss_type == "mse":
             sqr_loss = torch.mul(pred - target, pred - target)
-            loss = torch.mul(sqr_loss, w).mean()
-            return loss
+            return torch.mul(sqr_loss, w).mean()
         elif loss_type == "binary":
             loss = nn.BCELoss(weight=w)
             return loss(pred, target)
         else:
-            raise NotImplementedError("loss {} is not supported!".format(loss_type))
+            raise NotImplementedError(f"loss {loss_type} is not supported!")
 
     def predict(self, dataset: DatasetH, segment: Union[Text, slice] = "test"):
         if not self.fitted:
@@ -323,10 +291,9 @@ class Net(nn.Module):
     def __init__(self, input_dim, output_dim, layers=(256, 512, 768, 512, 256, 128, 64), loss="mse"):
         super(Net, self).__init__()
         layers = [input_dim] + list(layers)
-        dnn_layers = []
         drop_input = nn.Dropout(0.05)
-        dnn_layers.append(drop_input)
-        for i, (input_dim, hidden_units) in enumerate(zip(layers[:-1], layers[1:])):
+        dnn_layers = [drop_input]
+        for input_dim, hidden_units in zip(layers[:-1], layers[1:]):
             fc = nn.Linear(input_dim, hidden_units)
             activation = nn.LeakyReLU(negative_slope=0.1, inplace=False)
             bn = nn.BatchNorm1d(hidden_units)
@@ -343,7 +310,7 @@ class Net(nn.Module):
             sigmoid = nn.Sigmoid()
             dnn_layers.append(nn.Sequential(fc, sigmoid))
         else:
-            raise NotImplementedError("loss {} is not supported!".format(loss))
+            raise NotImplementedError(f"loss {loss} is not supported!")
         # optimizer
         self.dnn_layers = nn.ModuleList(dnn_layers)
         self._weight_init()
@@ -355,6 +322,6 @@ class Net(nn.Module):
 
     def forward(self, x):
         cur_output = x
-        for i, now_layer in enumerate(self.dnn_layers):
+        for now_layer in self.dnn_layers:
             cur_output = now_layer(cur_output)
         return cur_output

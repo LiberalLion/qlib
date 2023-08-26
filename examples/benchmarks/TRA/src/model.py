@@ -59,10 +59,15 @@ class TRAModel(Model):
             for param in self.model.parameters():
                 param.requires_grad_(False)
         else:
-            self.logger.info("# model params: %d" % sum([p.numel() for p in self.model.parameters()]))
+            self.logger.info(
+                "# model params: %d"
+                % sum(p.numel() for p in self.model.parameters())
+            )
 
         self.tra = TRA(self.model.output_size, **tra_config).to(device)
-        self.logger.info("# tra params: %d" % sum([p.numel() for p in self.tra.parameters()]))
+        self.logger.info(
+            "# tra params: %d" % sum(p.numel() for p in self.tra.parameters())
+        )
 
         self.optimizer = optim.Adam(list(self.model.parameters()) + list(self.tra.parameters()), lr=lr)
 
@@ -270,7 +275,7 @@ class TRAModel(Model):
             else:
                 stop_rounds += 1
                 if stop_rounds >= self.early_stop:
-                    self.logger.info("early stop @ %s" % epoch)
+                    self.logger.info(f"early stop @ {epoch}")
                     break
 
             # restore parameters
@@ -282,7 +287,7 @@ class TRAModel(Model):
         self.tra.load_state_dict(best_params["tra"])
 
         metrics, preds = self.test_epoch(test_set, return_pred=True)
-        self.logger.info("test metrics: %s" % metrics)
+        self.logger.info(f"test metrics: {metrics}")
 
         if self.logdir:
             self.logger.info("save model & pred to local directory")
@@ -322,7 +327,7 @@ class TRAModel(Model):
         test_set = dataset.prepare(segment)
 
         metrics, preds = self.test_epoch(test_set, return_pred=True)
-        self.logger.info("test metrics: %s" % metrics)
+        self.logger.info(f"test metrics: {metrics}")
 
         return preds
 
@@ -597,7 +602,7 @@ def sinkhorn(Q, n_iters=3, epsilon=0.01):
     with torch.no_grad():
         Q = shoot_infs(Q)
         Q = torch.exp(Q / epsilon)
-        for i in range(n_iters):
+        for _ in range(n_iters):
             Q /= Q.sum(dim=0, keepdim=True)
             Q /= Q.sum(dim=1, keepdim=True)
     return Q

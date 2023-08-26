@@ -18,10 +18,7 @@ class ScoreFileModel(Model):
 
     def get_data_with_date(self, date, **kwargs):
         score = self.pred.loc(axis=0)[:, date]  # (stock_id, trade_date) multi_index, score in pdate
-        score_series = score.reset_index(level="datetime", drop=True)[
-            "score"
-        ]  # pd.Series ; index:stock_id, data: score
-        return score_series
+        return score.reset_index(level="datetime", drop=True)["score"]
 
     def predict(self, x_test, **kwargs):
         return x_test

@@ -55,7 +55,7 @@ class BaseExecutor:
         folder_path = pathlib.Path(user_path) / "trade" / YYYY / MM
         if not folder_path.exists():
             folder_path.mkdir(parents=True)
-        transaction_path = folder_path / "transaction_{}.csv".format(str(trade_date.date()))
+        transaction_path = folder_path / f"transaction_{str(trade_date.date())}.csv"
         columns = [
             "date",
             "stock_id",
@@ -66,35 +66,40 @@ class BaseExecutor:
             "trade_price",
             "factor",
         ]
-        data = []
-        for [order, trade_val, trade_cost, trade_price] in trade_info:
-            data.append(
-                [
-                    trade_date,
-                    order.stock_id,
-                    order.direction,
-                    order.amount,
-                    trade_val,
-                    trade_cost,
-                    trade_price,
-                    order.factor,
-                ]
-            )
+        data = [
+            [
+                trade_date,
+                order.stock_id,
+                order.direction,
+                order.amount,
+                trade_val,
+                trade_cost,
+                trade_price,
+                order.factor,
+            ]
+            for [order, trade_val, trade_cost, trade_price] in trade_info
+        ]
         df = pd.DataFrame(data, columns=columns)
         df.to_csv(transaction_path, index=False)
 
     def load_trade_info_from_executed_file(self, user_path, trade_date):
         YYYY, MM, DD = str(trade_date.date()).split("-")
-        file_path = pathlib.Path(user_path) / "trade" / YYYY / MM / "transaction_{}.csv".format(str(trade_date.date()))
+        file_path = (
+            pathlib.Path(user_path)
+            / "trade"
+            / YYYY
+            / MM
+            / f"transaction_{str(trade_date.date())}.csv"
+        )
         if not file_path.exists():
-            raise ValueError("File {} not exists!".format(file_path))
+            raise ValueError(f"File {file_path} not exists!")
 
         filedate = get_date_in_file_name(file_path)
         transaction = pd.read_csv(file_path)
         trade_info = []
         for i in range(len(transaction)):
             date = transaction.loc[i]["date"]
-            if not date == filedate:
+            if date != filedate:
                 continue
                 # raise ValueError("date in transaction file {} not equal to it's file date{}".format(date, filedate))
             order = Order(
@@ -168,11 +173,8 @@ class SimulatorExecutor(BaseExecutor):
                             )
                         )
 
-            else:
-                if self.verbose:
-                    print("[W {:%Y-%m-%d}]: {} wrong.".format(trade_date, order.stock_id))
-                # do nothing
-                pass
+            elif self.verbose:
+                print("[W {:%Y-%m-%d}]: {} wrong.".format(trade_date, order.stock_id))
         return trade_info
 
 
@@ -195,7 +197,7 @@ def save_score_series(score_series, user_path, trade_date):
     folder_path = user_path / "score" / YYYY / MM
     if not folder_path.exists():
         folder_path.mkdir(parents=True)
-    file_path = folder_path / "score_{}.csv".format(str(trade_date.date()))
+    file_path = folder_path / f"score_{str(trade_date.date())}.csv"
     score_series.to_csv(file_path)
 
 
@@ -218,9 +220,10 @@ def load_score_series(user_path, trade_date):
     folder_path = user_path / "score" / YYYY / MM
     if not folder_path.exists():
         folder_path.mkdir(parents=True)
-    file_path = folder_path / "score_{}.csv".format(str(trade_date.date()))
-    score_series = pd.read_csv(file_path, index_col=0, header=None, names=["instrument", "score"])
-    return score_series
+    file_path = folder_path / f"score_{str(trade_date.date())}.csv"
+    return pd.read_csv(
+        file_path, index_col=0, header=None, names=["instrument", "score"]
+    )
 
 
 def save_order_list(order_list, user_path, trade_date):
@@ -253,7 +256,7 @@ def save_order_list(order_list, user_path, trade_date):
         else:
             buy[order.stock_id] = [order.amount, order.factor]
     order_dict = {"sell": sell, "buy": buy}
-    file_path = folder_path / "orderlist_{}.json".format(str(trade_date.date()))
+    file_path = folder_path / f"orderlist_{str(trade_date.date())}.json"
     with file_path.open("w") as fp:
         json.dump(order_dict, fp)
 
@@ -261,9 +264,15 @@ def save_order_list(order_list, user_path, trade_date):
 def load_order_list(user_path, trade_date):
     user_path = pathlib.Path(user_path)
     YYYY, MM, DD = str(trade_date.date()).split("-")
-    path = user_path / "trade" / YYYY / MM / "orderlist_{}.json".format(str(trade_date.date()))
+    path = (
+        user_path
+        / "trade"
+        / YYYY
+        / MM
+        / f"orderlist_{str(trade_date.date())}.json"
+    )
     if not path.exists():
-        raise ValueError("File {} not exists!".format(path))
+        raise ValueError(f"File {path} not exists!")
     # get orders
     with path.open("r") as fp:
         order_dict = json.load(fp)

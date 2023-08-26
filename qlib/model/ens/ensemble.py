@@ -25,7 +25,7 @@ class Ensemble:
     """
 
     def __call__(self, ensemble_dict: dict, *args, **kwargs):
-        raise NotImplementedError(f"Please implement the `__call__` method.")
+        raise NotImplementedError("Please implement the `__call__` method.")
 
 
 class SingleKeyEnsemble(Ensemble):
@@ -52,9 +52,7 @@ class SingleKeyEnsemble(Ensemble):
         if not isinstance(ensemble_dict, dict):
             return ensemble_dict
         if recursion:
-            tmp_dict = {}
-            for k, v in ensemble_dict.items():
-                tmp_dict[k] = self(v, recursion)
+            tmp_dict = {k: self(v, recursion) for k, v in ensemble_dict.items()}
             ensemble_dict = tmp_dict
         keys = list(ensemble_dict.keys())
         if len(keys) == 1:

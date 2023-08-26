@@ -176,15 +176,16 @@ class WeightStrategyBase(BaseStrategy, AdjustTimer):
             score=score_series, current=current_temp, trade_date=trade_date
         )
 
-        order_list = self.order_generator.generate_order_list_from_target_weight_position(
-            current=current_temp,
-            trade_exchange=trade_exchange,
-            risk_degree=self.get_risk_degree(trade_date),
-            target_weight_position=target_weight_position,
-            pred_date=pred_date,
-            trade_date=trade_date,
+        return (
+            self.order_generator.generate_order_list_from_target_weight_position(
+                current=current_temp,
+                trade_exchange=trade_exchange,
+                risk_degree=self.get_risk_degree(trade_date),
+                target_weight_position=target_weight_position,
+                pred_date=pred_date,
+                trade_date=trade_date,
+            )
         )
-        return order_list
 
 
 class TopkDropoutStrategy(BaseStrategy, ListAdjustTimer):
@@ -323,7 +324,7 @@ class TopkDropoutStrategy(BaseStrategy, ListAdjustTimer):
             except ValueError:
                 today = candi
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
         # combine(new stocks + last stocks),  we will drop stocks from this list
         # In case of dropping higher score stock and buying lower score stock.
         comb = score_series.reindex(last.union(pd.Index(today))).sort_values(ascending=False).index
@@ -338,7 +339,7 @@ class TopkDropoutStrategy(BaseStrategy, ListAdjustTimer):
             except ValueError:  #  No enough candidates
                 sell = candi
         else:
-            raise NotImplementedError(f"This type of input is not supported")
+            raise NotImplementedError("This type of input is not supported")
 
         # Get the stock list we really want to buy
         buy = today[: len(sell) + self.topk - len(last)]

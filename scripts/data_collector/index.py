@@ -157,20 +157,36 @@ class IndexBase:
             if last_code:
                 add_code = list(set(last_code) - set(_currenet_code))
                 remote_code = list(set(_currenet_code) - set(last_code))
-                for _code in add_code:
-                    result_df_list.append(
-                        pd.DataFrame(
-                            [[get_trading_date_by_shift(self.calendar_list, _trading_date, 1), _code, self.ADD]],
-                            columns=_columns,
-                        )
+                result_df_list.extend(
+                    pd.DataFrame(
+                        [
+                            [
+                                get_trading_date_by_shift(
+                                    self.calendar_list, _trading_date, 1
+                                ),
+                                _code,
+                                self.ADD,
+                            ]
+                        ],
+                        columns=_columns,
                     )
-                for _code in remote_code:
-                    result_df_list.append(
-                        pd.DataFrame(
-                            [[get_trading_date_by_shift(self.calendar_list, _trading_date, 0), _code, self.REMOVE]],
-                            columns=_columns,
-                        )
+                    for _code in add_code
+                )
+                result_df_list.extend(
+                    pd.DataFrame(
+                        [
+                            [
+                                get_trading_date_by_shift(
+                                    self.calendar_list, _trading_date, 0
+                                ),
+                                _code,
+                                self.REMOVE,
+                            ]
+                        ],
+                        columns=_columns,
                     )
+                    for _code in remote_code
+                )
             last_code = _currenet_code
         df = pd.concat(result_df_list)
         logger.info("end of parse changes from history companies.")
@@ -203,8 +219,7 @@ class IndexBase:
                 new_df = new_df.append(_tmp_df, sort=False)
 
         inst_df = new_df.loc[:, instruments_columns]
-        _inst_prefix = self.INST_PREFIX.strip()
-        if _inst_prefix:
+        if _inst_prefix := self.INST_PREFIX.strip():
             inst_df["save_inst"] = inst_df[self.SYMBOL_FIELD_NAME].apply(lambda x: f"{_inst_prefix}{x}")
         inst_df.to_csv(
             self.instruments_dir.joinpath(f"{self.index_name.lower()}.txt"), sep="\t", index=False, header=None

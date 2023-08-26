@@ -45,8 +45,12 @@ def get_benchmark_weight(
         bench_weight_df = bench_weight_df[bench_weight_df.date >= start_date]
     if end_date is not None:
         bench_weight_df = bench_weight_df[bench_weight_df.date <= end_date]
-    bench_stock_weight = bench_weight_df.pivot_table(index="date", columns="code", values="weight") / 100.0
-    return bench_stock_weight
+    return (
+        bench_weight_df.pivot_table(
+            index="date", columns="code", values="weight"
+        )
+        / 100.0
+    )
 
 
 def get_stock_weight_df(positions):

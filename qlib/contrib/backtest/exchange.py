@@ -66,15 +66,14 @@ class Exchange:
         # It is just for performance consideration.
         if limit_threshold is None:
             if C.region == REG_CN:
-                self.logger.warning(f"limit_threshold not set. The stocks hit the limit may be bought/sold")
+                self.logger.warning(
+                    "limit_threshold not set. The stocks hit the limit may be bought/sold"
+                )
         elif abs(limit_threshold) > 0.1:
             if C.region == REG_CN:
-                self.logger.warning(f"limit_threshold may not be set to a reasonable value")
+                self.logger.warning("limit_threshold may not be set to a reasonable value")
 
-        if deal_price[0] != "$":
-            self.deal_price = "$" + deal_price
-        else:
-            self.deal_price = deal_price
+        self.deal_price = "$" + deal_price if deal_price[0] != "$" else deal_price
         if isinstance(codes, str):
             codes = D.instruments(codes)
         self.codes = codes
@@ -109,7 +108,7 @@ class Exchange:
         self.quote.columns = self.all_fields
 
         if self.quote[self.deal_price].isna().any():
-            self.logger.warning("{} field data contains nan.".format(self.deal_price))
+            self.logger.warning(f"{self.deal_price} field data contains nan.")
 
         if self.quote["$factor"].isna().any():
             # The 'factor.day.bin' file not exists, and `factor` field contains `nan`
@@ -166,19 +165,15 @@ class Exchange:
     def is_stock_tradable(self, stock_id, trade_date):
         # check if stock can be traded
         # same as check in check_order
-        if self.check_stock_suspended(stock_id, trade_date) or self.check_stock_limit(stock_id, trade_date):
-            return False
-        else:
-            return True
+        return not self.check_stock_suspended(
+            stock_id, trade_date
+        ) and not self.check_stock_limit(stock_id, trade_date)
 
     def check_order(self, order):
         # check limit and suspended
-        if self.check_stock_suspended(order.stock_id, order.trade_date) or self.check_stock_limit(
+        return not self.check_stock_suspended(
             order.stock_id, order.trade_date
-        ):
-            return False
-        else:
-            return True
+        ) and not self.check_stock_limit(order.stock_id, order.trade_date)
 
     def deal_order(self, order, trade_account=None, position=None):
         """
@@ -224,7 +219,7 @@ class Exchange:
         deal_price = self.quote[(stock_id, trade_date)][self.deal_price]
         if np.isclose(deal_price, 0.0) or np.isnan(deal_price):
             self.logger.warning(f"(stock_id:{stock_id}, trade_date:{trade_date}, {self.deal_price}): {deal_price}!!!")
-            self.logger.warning(f"setting deal_price to close price")
+            self.logger.warning("setting deal_price to close price")
             deal_price = self.get_close(stock_id, trade_date)
         return deal_price
 
@@ -250,24 +245,26 @@ class Exchange:
                 # weight_position must be greater than 0 and less than 1
                 if weight_position[stock_id] < 0 or weight_position[stock_id] > 1:
                     raise ValueError(
-                        "weight_position is {}, "
-                        "weight_position is not in the range of (0, 1).".format(weight_position[stock_id])
+                        f"weight_position is {weight_position[stock_id]}, weight_position is not in the range of (0, 1)."
                     )
                 tradable_weight += weight_position[stock_id]
 
-        if tradable_weight - 1.0 >= 1e-5:
-            raise ValueError("tradable_weight is {}, can not greater than 1.".format(tradable_weight))
+        if tradable_weight >= 1.00001:
+            raise ValueError(
+                f"tradable_weight is {tradable_weight}, can not greater than 1."
+            )
 
-        amount_dict = {}
-        for stock_id in weight_position:
-            if weight_position[stock_id] > 0.0 and self.is_stock_tradable(stock_id=stock_id, trade_date=trade_date):
-                amount_dict[stock_id] = (
-                    cash
-                    * weight_position[stock_id]
-                    / tradable_weight
-                    // self.get_deal_price(stock_id=stock_id, trade_date=trade_date)
-                )
-        return amount_dict
+        return {
+            stock_id: (
+                cash
+                * weight_position[stock_id]
+                / tradable_weight
+                // self.get_deal_price(stock_id=stock_id, trade_date=trade_date)
+            )
+            for stock_id in weight_position
+            if weight_position[stock_id] > 0.0
+            and self.is_stock_tradable(stock_id=stock_id, trade_date=trade_date)
+        }
 
     def get_real_deal_amount(self, current_amount, target_amount, factor):
         """
@@ -287,10 +284,9 @@ class Exchange:
         else:
             if target_amount == 0:
                 return -current_amount
-            else:
-                deal_amount = current_amount - target_amount
-                deal_amount = self.round_amount_by_trade_unit(deal_amount, factor)
-                return -deal_amount
+            deal_amount = current_amount - target_amount
+            deal_amount = self.round_amount_by_trade_unit(deal_amount, factor)
+            return -deal_amount
 
     def generate_order_for_target_amount_position(self, target_position, current_position, trade_date):
         """Parameter:
@@ -355,14 +351,21 @@ class Exchange:
         position : Position()
         amount_dict : {stock_id : amount}
         """
-        value = 0
-        for stock_id in amount_dict:
+        return sum(
+            self.get_deal_price(stock_id=stock_id, trade_date=trade_date)
+            * amount_dict[stock_id]
+            for stock_id in amount_dict
             if (
-                self.check_stock_suspended(stock_id=stock_id, trade_date=trade_date) is False
-                and self.check_stock_limit(stock_id=stock_id, trade_date=trade_date) is False
-            ):
-                value += self.get_deal_price(stock_id=stock_id, trade_date=trade_date) * amount_dict[stock_id]
-        return value
+                self.check_stock_suspended(
+                    stock_id=stock_id, trade_date=trade_date
+                )
+                is False
+                and self.check_stock_limit(
+                    stock_id=stock_id, trade_date=trade_date
+                )
+                is False
+            )
+        )
 
     def round_amount_by_trade_unit(self, deal_amount, factor):
         """Parameter
@@ -387,17 +390,16 @@ class Exchange:
         trade_price = self.get_deal_price(order.stock_id, order.trade_date)
         if order.direction == Order.SELL:
             # sell
-            if position is not None:
-                if np.isclose(order.amount, position.get_stock_amount(order.stock_id)):
-                    # when selling last stock. The amount don't need rounding
-                    order.deal_amount = order.amount
-                else:
-                    order.deal_amount = self.round_amount_by_trade_unit(order.amount, order.factor)
-            else:
+            if position is None:
                 # TODO: We don't know current position.
                 #  We choose to sell all
                 order.deal_amount = order.amount
 
+            elif np.isclose(order.amount, position.get_stock_amount(order.stock_id)):
+                # when selling last stock. The amount don't need rounding
+                order.deal_amount = order.amount
+            else:
+                order.deal_amount = self.round_amount_by_trade_unit(order.amount, order.factor)
             trade_val = order.deal_amount * trade_price
             trade_cost = max(trade_val * self.close_cost, self.min_cost)
         elif order.direction == Order.BUY:
@@ -420,6 +422,6 @@ class Exchange:
             trade_val = order.deal_amount * trade_price
             trade_cost = trade_val * self.open_cost
         else:
-            raise NotImplementedError("order type {} error".format(order.type))
+            raise NotImplementedError(f"order type {order.type} error")
 
         return trade_val, trade_cost
